@@ -10,6 +10,10 @@
     </parent>
 
     <artifactId>leadnews-service</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>leadnews-user</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -34,6 +38,7 @@
             <artifactId>leadnews-feign-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+
         <!-- Spring boot starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -44,6 +49,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- nacos的注册中心和配置中心-->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
