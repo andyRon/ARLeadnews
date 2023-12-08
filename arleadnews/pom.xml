@@ -21,6 +21,7 @@
         <module>leadnews-service</module>
         <module>leadnews-test</module>
         <module>leadnews-utils</module>
+        <module>leadnews-basic</module>
     </modules>
     <packaging>pom</packaging>
 

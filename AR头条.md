@@ -671,51 +671,562 @@ http {
 
 
 
+> 从业务角度分析如何分表
+>
+> 滚屏分页的逻辑
+>
+> 文章详情-大文本静态化方案（freemarker，minio）
+
 ## 2 app端文章查看，静态化freemarker,分布式文件系统minIO
 
-### 文章列表加载
+### App文章列表
+
+#### 需求分析
+
+文章的布局展示
+
+![](images/image-20231208154204744.png)
 
 数据库leadnews_article
 
+![](images/image-20231208154431646.png)
 
+```mysql
+CREATE TABLE `ap_article` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标题',
+  `author_id` int unsigned DEFAULT NULL COMMENT '文章作者的ID',
+  `author_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '作者昵称',
+  `channel_id` int unsigned DEFAULT NULL COMMENT '文章所属频道ID',
+  `channel_name` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '频道名称',
+  `layout` tinyint unsigned DEFAULT NULL COMMENT '文章布局\r\n            0 无图文章\r\n            1 单图文章\r\n            2 多图文章',
+  `flag` tinyint unsigned DEFAULT NULL COMMENT '文章标记\r\n            0 普通文章\r\n            1 热点文章\r\n            2 置顶文章\r\n            3 精品文章\r\n            4 大V 文章',
+  `images` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文章图片\r\n            多张逗号分隔',
+  `labels` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文章标签最多3个 逗号分隔',
+  `likes` int unsigned DEFAULT NULL COMMENT '点赞数量',
+  `collection` int unsigned DEFAULT NULL COMMENT '收藏数量',
+  `comment` int unsigned DEFAULT NULL COMMENT '评论数量',
+  `views` int unsigned DEFAULT NULL COMMENT '阅读数量',
+  `province_id` int unsigned DEFAULT NULL COMMENT '省市',
+  `city_id` int unsigned DEFAULT NULL COMMENT '市区',
+  `county_id` int unsigned DEFAULT NULL COMMENT '区县',
+  `created_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
+  `sync_status` tinyint(1) DEFAULT '0' COMMENT '同步状态',
+  `origin` tinyint unsigned DEFAULT '0' COMMENT '来源',
+  `static_url` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1383828014629179394 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='文章信息表，存储已发布的文章';
+```
+
+![](images/image-20231208155017745.png)
+
+> 为什么文章信息要拆分成多个表？
+
+表的拆分-**垂直分表**
+
+垂直分表：将一个表的字段分散到多个表中，每个表存储其中一部分字段。
+
+优势：
+
+1. ﻿﻿减少IO争抢，减少锁表的几率，查看文章概述与文章详情互不影响
+2. ﻿﻿﻿充分发挥高频数据的操作效率，对文章概述数据操作的高效率不会被操作文章详情数据的低效率所拖累。
+
+拆分规则：
+
+1. ﻿﻿﻿把**不常用的字段**单独放在一张表
+2. ﻿﻿﻿把text，blob等**大字段**拆分出来单独放在一张表
+3. ﻿﻿﻿**经常组合查询的字段**单独放在一张表中
+
+
+
+#### 实现思路
+
+![](images/image-20231208155627228.png)
+
+1. 在默认频道展示10条文章信息
+
+2. 可以切换频道查看不同种类文章
+
+3. 当用户==下拉==可以加载最新的文章（分页）本页文章列表中发布时间为最大的时间为依据
+4. 当用户==上拉==可以加载更多的文章信息（按照发布时间）本页文章列表中发布时间最小的时间为依据
+
+5. 如果是当前频道的首页，前端传递默认参数：
+
+   `maxBehotTime`:0（毫秒）
+
+   `minBehotTime`: 20000000000000（毫秒）2063年
+
+首页默认加载小于2063年的数据
+
+
+
+#### 接口定义
+
+![](images/image-20231208160713084.png)
+
+#### 实现
+
+- 在leadnews-service中添加一个模块leadnews-article
+
+```yaml
+server:
+  port: 51802
+spring:
+  application:
+    name: leadnews-article
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.0.102:8848
+      config:
+        server-addr: 192.168.0.102:8848
+        file-extension: yml
+```
+
+
+
+- 需要在nacos中添加对应的配置
+
+```yaml
+spring:
+  datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/leadnews_article?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: root
+      password: 33824
+# 设置Mapper接口所对应的XML文件位置，如果你在Mapper接口中有自定义方法，需要进行该配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  # 设置别名包扫描路径，通过该属性可以给包中的类注册别名
+  type-aliases-package: top.andyron.model.article.pojos
+```
+
+![](images/image-20231208162601041.png)
+
+- 定义接口
+
+
+
+- 编写mapper文件
+
+文章表与文章配置表多表查询
+
+
+
+- 编写业务层代码
+
+
+
+- 编写控制器代码
+
+
+
+- swagger测试或前后端联调测试
+
+首页要在app网关的nacos配置中心添加文章微服务的路由：
+
+```yaml
+
+				# 文章微服务
+        - id: article
+          uri: lb://leadnews-article
+          predicates:
+            - Path=/article/**
+          filters:
+            - StripPrefix= 1
+```
+
+启动网关、user、article微服务
+
+
+
+### 文章详情-实现方案分析
+
+#### 方案1
+
+根据文章的id去查询文章内容表，返回渲染页面
+
+![](images/image-20231208175801032.png)
+
+#### 方案2-静态模板展示 
+
+![](images/image-20231208175735636.png)
 
 
 
 ### freemarker
 
-[FreeMarker](https://github.com/apache/freemarker) 是一款 模板引擎： 即一种基于模板和要改变的数据， 并用来生成输出文本(HTML网页，电子邮件，配置文件，源代码等)的通用工具。 它不是面向最终用户的，而是一个Java类库，是一款程序员可以嵌入他们所开发产品的组件。
+#### 模板引擎
+
+![](images/image-20231208181155299.png)
+
+[FreeMarker](https://github.com/apache/freemarker) 是一款 模板引擎： 即一种基于模板和要改变的数据， 并用来生成输出文本(==HTML网页，电子邮件，配置文件，源代码==等)的通用工具。 它**==不是面向最终用户的==**，而是一个Java类库，是一款程序员可以嵌入他们所开发产品的组件。
 
 模板编写为FreeMarker Template Language (FTL)。它是简单的，专用的语言， *不是* 像PHP那样成熟的编程语言。 那就意味着要准备数据在真实编程语言中来显示，比如数据库查询和业务运算， 之后模板显示已经准备好的数据。在模板中，你可以专注于如何展现数据， 而在模板之外可以专注于要展示什么数据。 
 
-
+#### 技术选型对比
 
 常用的java模板引擎还有哪些？
 
 Jsp、Freemarker、Thymeleaf 、Velocity 等。
 
-1.Jsp 为 Servlet 专用，不能单独进行使用。
+1. Jsp 为 Servlet 专用，不能单独进行使用。
 
-2.Thymeleaf 为新技术，功能较为强大，但是执行的效率比较低。
+2. Thymeleaf 为新技术，功能较为强大，但是执行的效率比较低。
 
-3.Velocity从2010年更新完 2.0 版本后，便没有在更新。Spring Boot 官方在 1.4 版本后对此也不在支持，虽然 Velocity 在 2017 年版本得到迭代，但为时已晚。 
+3. Velocity从2010年更新完 2.0 版本后，便没有在更新。Spring Boot 官方在 1.4 版本后对此也不在支持，虽然 Velocity 在 2017 年版本得到迭代，但为时已晚。 
+
+#### 环境搭建-快速入门
+
+freemarker作为springmvc一种视图格式，默认情况下SpringMVC支持freemarker视图格式。
+
+- 创建一个freemarker-demo 的测试工程专门用于freemarker的功能测试与模板的测试。
+
+```xml
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- apache 对 java io 的封装工具库 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+    </dependencies>
+```
+
+- 配置文件application.yml
+
+```yaml
+server:
+  port: 8881 #服务端口
+spring:
+  application:
+    name: freemarker-demo #指定服务名
+  freemarker:
+    cache: false  #关闭模板缓存，方便测试
+    settings:
+      template_update_delay: 0 #检查模板更新延迟时间，设置为0表示立即检查，如果时间大于0会有缓存不方便进行模板测试
+    suffix: .ftl               #指定Freemarker模板文件的后缀名
+```
+
+- 创建模型类
+- 创建模板
+
+在resources下创建`templates`，此目录为freemarker的默认模板存放目录。
+
+在templates下创建模板文件 01-basic.ftl，模板中的==插值表达式==最终会被freemarker替换成具体的数据。
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Hello World!</title>
+</head>
+<body>
+<b>普通文本 String 展示：</b><br><br>
+Hello ${name} <br>
+<hr>
+<b>对象Student中的数据展示：</b><br/>
+姓名：${stu.name}<br/>
+年龄：${stu.age}
+<hr>
+</body>
+</html>
+```
+
+- 创建controller
+
+- 创建启动类
+
+- 测试
+
+http://localhost:8881/basic
+
+![](images/image-20231208182656467.png)
 
 
 
+freemarker模板文件通常都是以ftl作为扩展名，也可以为html、xml、jsp等
 
+`FreeMarkerAutoConfiguration`
+
+`FreeMarkerProperties`
+
+
+
+#### Freemarker指令语法
+
+##### 基础语法种类
+
+- 注释
+
+```velocity
+<#-- 我是一个freemarker注释 -->
+```
+
+- 插值（Interpolation）：即 **`${..}`** 部分,freemarker会用真实的值代替**`${..}`**
+
+```velocity
+Hello ${name}
+```
+
+- ==FTL指令==：和HTML标记类似，名字前加#予以区分，Freemarker会解析标签中的表达式或逻辑。
+
+```html
+<# >FTL指令</#> 
+```
+
+有很多FTL指令
+
+- 文本，仅文本信息，这些不是freemarker的注释、插值、FTL指令的内容会被freemarker忽略解析，直接输出内容。
+
+```velocity
+<#--freemarker中的普通文本-->
+我是一个普通的文本
+```
+
+
+
+##### 集合指令（List和Map）
+
+```html
+<#list></#list>
+```
+
+List:
+
+```html
+    <#list stus as stu >
+      <tr>
+        <td>${stu_index}</td>
+        <td>${stu.name}</td>
+        <td>${stu.age}</td>
+        <td>${stu.money}</td>
+      </tr>
+    </#list>
+```
+
+`${k_index}`得到循环的下表，从0开始，是stu加上`_index`。
+
+获取map中的值：
+
+```
+map["keyname"].property
+map.keyname.property
+```
+
+遍历map：
+
+```html
+		<#list stuMap?keys as key >
+        <tr>
+            <td>${key_index}</td>
+            <td>${stuMap[key].name}</td>
+            <td>${stuMap[key].age}</td>
+            <td>${stuMap[key].money}</td>
+        </tr>
+    </#list>
+```
+
+
+
+##### if指令
+
+```html
+<#if expression>
+<#else>
+</#if>
+```
+
+
+
+```html
+<table>
+    <tr>
+        <td>姓名</td>
+        <td>年龄</td>
+        <td>钱包</td>
+    </tr>
+    <#list stus as stu >
+        <#if stu.name='小红'>
+            <tr style="color: red">
+                <td>${stu_index}</td>
+                <td>${stu.name}</td>
+                <td>${stu.age}</td>
+                <td>${stu.money}</td>
+            </tr>
+            <#else >
+            <tr>
+                <td>${stu_index}</td>
+                <td>${stu.name}</td>
+                <td>${stu.age}</td>
+                <td>${stu.money}</td>
+            </tr>
+        </#if>
+    </#list>
+</table>
+```
+
+
+
+##### 运算符
+
+- 算数运算符
+
+除了 + 运算以外，其他的运算只能和 number 数字类型的计算。
+
+```html
+<b>算数运算符</b>
+<br/><br/>
+    100+5 运算：  ${100 + 5 }<br/>
+    100 - 5 * 5运算：${100 - 5 * 5}<br/>
+    5 / 2运算：${5 / 2}<br/>
+    12 % 10运算：${12 % 10}<br/>
+<hr>
+```
+
+- 比较运算符
+
+![](images/image-20231208190601994.png)
+
+![](images/image-20231208190638809.png)
+
+
+
+- 逻辑运算符
+
+```html
+<b>逻辑运算符</b>
+    <br/>
+    <br/>
+    <#if (10 lt 12 )&&( 10  gt  5 )  >
+        (10 lt 12 )&&( 10  gt  5 )  显示为 true
+    </#if>
+    <br/>
+    <br/>
+    <#if !false>
+        false 取反为true
+    </#if>
+<hr>
+```
+
+
+
+##### 空值处理
+
+- 判断某变量是否存在使用 “`??`”
+
+```html
+    <#if stus??>
+    </#if>
+```
+
+- 缺失变量默认值使用 “`!`”
+
+使用!要以指定一个默认值，当变量为空时显示默认值， `${name!''}`表示如果name为空显示空字符串。
+
+如果是嵌套对象则建议使用（）括起来，例： `${(stu.bestFriend.name)!''}`表示，如果stu或bestFriend或name为空默认显示空字符串。
+
+
+
+##### 内建函数
+
+内建函数语法格式： `变量+?+函数名称` 
+
+- 集合的大小
+
+  `${集合名?size}`
+
+- 日期格式化
+
+  显示年月日: `${today?date}`
+  显示时分秒：`${today?time}`
+  显示日期+时间：`${today?datetime}`
+  自定义格式化：  `${today?string("yyyy年MM月")}`
+
+- 内建函数`c`
+
+  ```java
+  model.addAttribute("point", 102920122);
+  ```
+
+  point是数字型，使用${point}会显示这个数字的值，每三位使用逗号分隔。
+
+  如果不想显示为每三位分隔的数字，可以使用c函数将数字型转成字符串输出
+
+  `${point?c}`
+
+- 将json字符串转成对象
+
+ assign标签，assign的作用是定义一个变量
+
+```html
+<#assign text="{'bank':'工商银行','account':'10101920201920212'}" />
+<#assign data=text?eval />
+开户行：${data.bank}  账号：${data.account}
+```
+
+#### 输出静态化文件
+
+使用freemarkder原始api讲页面生成html文件
+
+![](images/image-20231208191831939.png)
+
+```java
+Template template = configuration.getTemplate("02-list.ftl");
+
+// 合成方法
+// 第一个参数：模型数据
+// 第二个参数：输出流
+template.process(getData(), new FileWriter("/Users/andyron/Downloads/list.html"));
+
+```
 
 
 
 ### 对象存储服务MinIO 
 
+分布式文件系统
+
+#### 对象存储的方式对比
+
+![](images/image-20231208193311299.png)
+
+#### 分布式文件系统
+
+![](images/image-20231208193622650.png)
+
 #### MinIO简介
 
-[MinIO](https://github.com/minio/minio)基于Apache License v2.0开源协议的对象存储服务，可以做为云存储的解决方案用来保存海量的图片，视频，文档。由于采用Golang实现，服务端可以工作在Windows,Linux, OS X和FreeBSD上。配置简单，基本是复制可执行程序，单行命令可以运行起来。
+[MinIO](https://github.com/minio/minio)基于Apache License v2.0开源协议的对象存储服务，可以做为云存储的解决方案用来保存海量的图片，视频，文档。
 
-MinIO兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。
+- Golang实现，配置简单，单行命令可以运行起来。
 
-**S3 （ Simple Storage Service简单存储服务）**
+- MinIO兼容亚马逊S3云存储服务接口（之后不想自己维护了，可以直接将其部署到云上），非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。
 
-基本概念
+**S3 （ Simple Storage Service简单存储服务）**  一种云标准
+
+MinIO基本概念
 
 - bucket – 类比于文件系统的目录
 - Object – 类比文件系统的文件
@@ -723,7 +1234,7 @@ MinIO兼容亚马逊S3云存储服务接口，非常适合于存储大容量非�
 
 官网文档：http://docs.minio.org.cn/docs/
 
-#### MinIO特点 
+MinIO特点： 
 
 - 数据保护
 
@@ -759,13 +1270,266 @@ MinIO兼容亚马逊S3云存储服务接口，非常适合于存储大容量非�
 
 
 
+#### MinIO安装
+
+docker安装MinIOn
+
+- `docker pull minio/minio`
+- 创建容器
+
+```shell
+docker run -p 9000:9000 --name minio -d --restart=always -e "MINIO_ACCESS_KEY=minio" -e "MINIO_SECRET_KEY=minio123" -v /home/data:/data -v /home/config:/root/.minio minio/minio server /data
+```
+
+- 访问minio
+
+```shell
+docker run -p 9000:9000 --name minio -d --restart=always -e "MINIO_ROOT_USER=minio" -e "MINIO_ROOT_PASSWORD=minio123" -v /home/data:/data -v /home/config:/root/.minio minio/minio server /data
+```
+
+访问报错
+
+```
+Warning: The standard parity is set to 0. This can lead to data loss.
+```
+
+> 在macos本地部署minios
+>
+> ```shell
+> curl -O https://dl.minio.org.cn/server/minio/release/darwin-arm64/minio
+> chmod +x ./minio
+> ```
+>
+> 下载，只是单一执行文件。
+>
+> 运行，配置一些参数
+>
+> ```shell
+> ./minio server --config-dir=/Users/andyron/myfield/env/minio/config --address=:9000 /Users/andyron/myfield/env/minio/data
+> ```
+>
+> minioadmin
+>
+> 访问本地9000端口即可 http://192.168.0.102:9000
+
+
+
+
+
+#### minio快速入门
+
+创建模块minio-demo
+
+```java
+
+        try {
+            FileInputStream fileInputStream = new FileInputStream("/Users/andyron/myfield/tmp/list.html"); 
+
+            // 1 创建minio链接客户端
+            MinioClient minioClient = MinioClient.builder().credentials("minioadmin", "minioadmin")
+                    .endpoint("http://192.168.0.102:9000").build();
+            // 2 上传
+            PutObjectArgs objectArgs = PutObjectArgs.builder()
+                    .object("list.html")        // 文件名
+                    .contentType("text/html")         // 文件类型
+                    .bucket("leadnews")         // 桶名称，与在minio管理界面创建的桶一致
+                    // -1 表示上传所有
+                    .stream(fileInputStream, fileInputStream.available(), -1)
+                    .build();
+            minioClient.putObject(objectArgs);
+
+            // 访问路径
+            System.out.println("http://192.168.0.102:9000/leadnews/list.html");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+```
+
+需要设置下通道访问权限，然后上传额文件就能在浏览器直接访问了
+
+![](images/iShot_2023-12-08_22.41.39.png)
+
+http://192.168.0.102:9000/leadnews/list.html
+
+
+
+#### 封装MinIO为starter
+
+为什么需要封装MinIO为starter？
+
+![](images/image-20231208224521367.png)
+
+> [p39 2:30](https://www.bilibili.com/video/BV1Qs4y1v7x4?p=39&vd_source=634715056d593def3fe15c44fd54e180)  当需要拷贝目录到项目中变成模块，怎么操作 ❤️
+
+
+
+- 建立两个模块
+
+```
+leadnews-basic
+		file-starter
+```
+
+
+
+```xml
+				<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>7.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+```
+
+
+
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  top.andyron.file.service.impl.MinIOFileStorageService
+```
+
+
+
+##### 测试封装的starter
+
+- 在minio-demo中引入自定义的starter
+
+```xml
+				<dependency>
+            <groupId>top.andyron</groupId>
+            <artifactId>file-starter</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+```
+
+- 创建配置文件，配置属性与自定义的`MinIOConfigProperties`一致
+
+```yaml
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: leadnews
+  endpoint: http://192.168.0.102:9000
+  readPath: http://192.168.0.102:9000
+```
+
+
+
+- 测试，注入`FileStorageService`使用：
+
+```java
+@SpringBootTest(classes = MinIOApplication.class)
+@RunWith(SpringRunner.class)
+public class MinIOTest {
+
+    @Autowired
+    private FileStorageService fileStorageService;
+    // 测试自定义starter
+    @Test
+    public void test() throws FileNotFoundException {
+        FileInputStream fileInputStream = new FileInputStream("/Users/andyron/myfield/tmp/list.html");
+        String path = fileStorageService.uploadHtmlFile("", "list.html", fileInputStream);
+        System.out.println(path);
+    }
+}
+```
+
+上传文件到MinIO，并返回了访问地址 http://192.168.0.102:9000/leadnews/2023/12/08/list.html 
+
+
+
 
 
 ### 文章详情
 
+#### 实现步骤
+
+1. 在artile微服务中添加MinIO和freemarker的支持，参考测试项目
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-freemarker</artifactId>
+</dependency>
+<dependency>
+  <groupId>top.andyron</groupId>
+  <artifactId>file-starter</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+</dependency>
+```
+
+在nacos中的文章微服务添加备注：
+
+```yaml
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: leadnews
+  endpoint: http://192.168.0.102:9000
+  readPath: http://192.168.0.102:9000
+```
 
 
 
+
+
+2. 创建模板文件（article.ftl）
+
+
+
+3. 创建index.js和index.css文件，手动上传到MinIO职工
+
+
+
+4. 在artile微服务中新增测试类（后期新增文章的时候创建详情静态页，目前暂时手动生成）
+
+```java
+				// 1 获取文章内容
+        ApArticleContent apArticleContent = apArticleContentMapper
+                .selectOne(Wrappers.<ApArticleContent>lambdaQuery()
+                .eq(ApArticleContent::getArticleId, "1383828014629179393"));
+        if (apArticleContent != null && StringUtils.isNotBlank(apArticleContent.getContent())) {
+            //2 文章内容通过freemarker生成html文件
+            Template template = configuration.getTemplate("article.ftl");
+            // 数据模型
+            Map<String, Object> content = new HashMap<>();
+            content.put("content", JSONArray.parseArray(apArticleContent.getContent()));
+            StringWriter out = new StringWriter();
+            template.process(content, out);
+
+            //3 把html文件上传到minio中
+            InputStream in = new ByteArrayInputStream(out.toString().getBytes());
+            String path = fileStorageService.uploadHtmlFile("", apArticleContent.getArticleId() + ".html", in);
+
+            //4 修改ap_article表，保存static_url字段
+            apArticleService.update(Wrappers.<ApArticle>lambdaUpdate()
+                    .eq(ApArticle::getId, apArticleContent.getArticleId())
+                    .set(ApArticle::getStaticUrl, path));
+
+        }
+```
+
+
+
+
+
+🔖 生成html中一些参数没有 
 
 ## 3 自媒体文章发布
 

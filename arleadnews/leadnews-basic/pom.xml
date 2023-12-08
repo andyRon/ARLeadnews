@@ -9,11 +9,10 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>leadnews-test</artifactId>
+    <artifactId>leadnews-basic</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>freemarker-demo</module>
-        <module>minio-demo</module>
+        <module>file-starter</module>
     </modules>
 
     <properties>
