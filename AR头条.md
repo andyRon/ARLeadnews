@@ -210,7 +210,9 @@ See 'docker run --help'.
 
 
 
-使用本地macos上，源码安装启动nacos  http://localhost:8848/nacos
+使用本地macos上，源码安装启动nacos  `./startup.sh -m standalone` (单机模式运行)
+
+http://localhost:8848/nacos
 
 账号密码都是nacos
 
@@ -229,8 +231,8 @@ arleadnews								父工程，统一管理项目依赖（定义通用包的版�
 		leadnews-feign-api		feign对外的接口
 		leadnews-model				pojo、dto
 		leadnews-utils				通用工具
-		leadnews-gateway			网关
-		leadnews-service			管理微服务
+		leadnews-gateway			管理一系列网关
+		leadnews-service			管理一系列微服务
 		leadnews-test					测试案例
 ```
 
@@ -1310,6 +1312,8 @@ Warning: The standard parity is set to 0. This can lead to data loss.
 >
 > minioadmin
 >
+> minioadmin
+>
 > 访问本地9000端口即可 http://192.168.0.102:9000
 
 
@@ -1531,25 +1535,383 @@ minio:
 
 🔖 生成html中一些参数没有 
 
+> 自媒体环境
+>
+> ​	后台环境
+>
+> ​	前台环境
+>
+> 素材管理
+>
+> ​	minIO的图片上传
+>
+> ​	微服务中获取用户的方式
+>
+> ​	拦截器的使用
+>
+> 文章管理
+>
+> ​	多条件查询
+>
+> ​	复杂业务的处理（文章发布）
+>
+> ​	jdk8中的新特性
+
 ## 3 自媒体文章发布
 
 ### 自媒体前后端搭建
 
+#### 后台搭建
 
+```
+arleandnews-service
+		leandnews-service
+				leandnews-wemedia
+		leandnews-gateway
+				leandnews-wemedia-gateway
+```
+
+搭建步骤
+
+1. 基础环境和数据准备
+
+数据库leadnews_wemedia
+
+在leandnews-model模块中添加对应相应配置
+
+2. leandnews-wemedia模块
+
+添加相应nacos配置
+
+```yaml
+spring:
+  datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/leadnews_wemedia?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: root
+      password: 33824
+# 设置Mapper接口所对应的XML文件位置，如果你在Mapper接口中有自定义方法，需要进行该配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  # 设置别名包扫描路径，通过该属性可以给包中的类注册别名
+  type-aliases-package: top.andyron.model.wemedia.pojos
+
+```
+
+
+
+
+
+3. leandnews-wemedia-gateway模块
+
+添加对应nacos配置
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]': # 匹配所有请求
+            allowedOrigins: "*" #跨域处理 允许所有的域
+            allowedMethods: # 支持的方法
+              - GET
+              - POST
+              - PUT
+              - DELETE
+      routes:
+        # 平台管理
+        - id: wemedia
+          uri: lb://leadnews-wemedia
+          predicates:
+            - Path=/wemedia/**
+          filters:
+            - StripPrefix= 1
+```
+
+
+
+#### 前台搭建
+
+通过nginx的虚拟主机功能，使用同一个nginx访问多个项目
+
+![](images/image-20231209211900862.png)
+
+
+
+- 自媒体前端：wemedia-web
+- 在nginx中配置leadnews.conf目录中新增leadnews-wemedia.conf文件
+
+```nginx
+upstream  leadnews-wemedia-gateway {
+    server localhost:51602;    
+}
+
+server {
+    listen 8802;
+    location / {
+        root /Users/andyron/myfield/git/ARLeadnews/wemedia-web/;
+        index index.html;
+    }
+    
+    location ~/wemedia/MEDIA/(.*) {
+        proxy_pass http://leadnews-wemedia-gateway/$1;
+        proxy_set_header HOST $host;  # 不改变源请求头的值
+        proxy_pass_request_body on;  #开启获取请求体
+        proxy_pass_request_headers on;  #开启获取请求头
+        proxy_set_header X-Real-IP $remote_addr;   # 记录真实发出请求的客户端IP
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  #记录代理信息
+    }
+}
+```
+
+`nginx -s reload`
+
+- 启动nginx，启动自媒体微服务和对应网关
+
+- 联调测试登录功能
+
+http://localhost:8802/
 
 
 
 ### 自媒体素材管理
 
+自媒体核心：上传文章
 
+#### 素材上传
+
+```sql
+CREATE TABLE `wm_news_material` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `material_id` int unsigned DEFAULT NULL COMMENT '素材ID',
+  `news_id` int unsigned DEFAULT NULL COMMENT '图文ID',
+  `type` tinyint unsigned DEFAULT NULL COMMENT '引用类型\r\n            0 内容引用\r\n            1 主图引用',
+  `ord` tinyint unsigned DEFAULT NULL COMMENT '引用排序',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=281 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='自媒体图文引用素材信息表';
+```
+
+在素材表中的用户信息如何得到？
+素材的信息保存到什么位置？
+
+##### 实现思路
+
+![](images/image-20231210175934144.png)
+
+1. token中解析用户id，存入header。
+
+在自媒体网关中的`AuthorizeFilter`添加：
+
+```java
+            // 获取用户信息，之前token中存储的就是id
+            Object userId = claimsBody.get("id");
+            // 存储header中
+            ServerHttpRequest serverHttpRequest = request.mutate().headers(httpHeaders -> {
+                httpHeaders.add("userId", userId + "");
+            }).build();
+            // 重置请求
+            exchange.mutate().request(serverHttpRequest);
+```
+
+2. 自定义拦截Token的拦截器WmTokenInterceptor，并配置添加
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 添加自定义的拦截器，拦截所有请求
+        registry.addInterceptor(new WmTokenInterceptor()).addPathPatterns("/**");
+    }
+}
+```
+
+
+
+##### 接口定义
+
+|          | **说明**                        |
+| -------- | ------------------------------- |
+| 接口路径 | /api/v1/material/upload_picture |
+| 请求方式 | POST                            |
+| 参数     | MultipartFile                   |
+| 响应结果 | ResponseResult                  |
+
+`MultipartFile`  ：Springmvc指定的文件接收类型
+
+ResponseResult  ：
+
+成功需要回显图片，返回素材对象
+
+
+
+
+
+- 导入自定义的file-starter，引入minio
+
+- 在nacos中的自媒体微服务添加备注：
+
+```yaml
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: leadnews
+  endpoint: http://192.168.0.102:9000
+  readPath: http://192.168.0.102:9000
+```
+
+
+
+> ==注意==：nacos中服务名不要搞错（`_`,`-`）
+
+
+
+#### 素材列表查询
+
+##### 接口定义
+
+|          | **说明**              |
+| -------- | --------------------- |
+| 接口路径 | /api/v1/material/list |
+| 请求方式 | POST                  |
+| 参数     | WmMaterialDto         |
+| 响应结果 | ResponseResult        |
+
+ResponseResult  :
+
+```json
+{
+  "host":null,
+  "code":200,
+  "errorMessage":"操作成功",
+  "data":[
+    {
+    "id":52,
+      "userId":1102,
+      "url":"http://192.168.200.130:9000/leadnews/2021/04/26/ec893175f18c4261af14df14b83cb25f.jpg",
+      "type":0,
+      "isCollection":0,
+      "createdTime":"2021-01-20T16:49:48.000+0000"
+    },
+    ....
+  ],
+  "currentPage":1,
+  "size":20,
+  "total":0
+}
+```
+
+##### 实现
+
+
+
+在自媒体启动类中添加mybatis-plus的分页拦截器
+
+```java
+    @Bean
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        return interceptor;
+    }
+```
+
+
+
+> 📢注意：先要登录，要不然会出现NullPointerException，因为WmThreadLocalUtil中没有存储用户信息
 
 
 
 ### 自媒体文章管理
 
+#### 查询所有频道
 
 
 
+#### 查询自媒体文章
+
+```mysql
+CREATE TABLE `wm_news` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` int unsigned DEFAULT NULL COMMENT '自媒体用户ID',
+  `title` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标题',
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '图文内容',
+  `type` tinyint unsigned DEFAULT NULL COMMENT '文章布局\r\n            0 无图文章\r\n            1 单图文章\r\n            3 多图文章',
+  `channel_id` int unsigned DEFAULT NULL COMMENT '图文频道ID',
+  `labels` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `submited_time` datetime DEFAULT NULL COMMENT '提交时间',
+  `status` tinyint unsigned DEFAULT NULL COMMENT '当前状态\r\n            0 草稿\r\n            1 提交（待审核）\r\n            2 审核失败\r\n            3 人工审核\r\n            4 人工审核通过\r\n            8 审核通过（待发布）\r\n            9 已发布',
+  `publish_time` datetime DEFAULT NULL COMMENT '定时发布时间，不定时则为空',
+  `reason` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '拒绝理由',
+  `article_id` bigint unsigned DEFAULT NULL COMMENT '发布库文章ID',
+  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '//图片用逗号分隔',
+  `enable` tinyint unsigned DEFAULT '1',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=6232 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='自媒体图文内容信息表';
+```
+
+
+
+#### 文章发布
+
+##### 需求分析
+
+![](images/image-20231211095937950.png)
+
+
+
+![](images/image-20231211100127259.png)
+
+![](images/image-20231211100328767.png)
+
+##### 实现思路及流程
+
+该功能为保存、修改（是否有id）、保存草稿的共有方法
+
+![](images/image-20231211100559243.png)
+
+1.前端提交发布或保存为草稿
+
+2.后台判断请求中是否包含了文章id
+
+3.如果不包含id,则为新增
+
+​	3.1 执行新增文章的操作
+
+​	3.2 关联文章内容图片与素材的关系
+
+​	3.3 关联文章封面图片与素材的关系
+
+4.如果包含了id，则为修改请求
+
+​	4.1 删除该文章与素材的所有关系
+
+​	4.2 执行修改操作
+
+​	4.3 关联文章内容图片与素材的关系
+
+​	4.4 关联文章封面图片与素材的关系
+
+##### 接口定义
+
+|          | **说明**               |
+| -------- | ---------------------- |
+| 接口路径 | /api/v1/channel/submit |
+| 请求方式 | POST                   |
+| 参数     | WmNewsDto              |
+| 响应结果 | ResponseResult         |
+
+![](images/image-20231211101052424.png)
+
+##### 实现
+
+
+
+
+
+🔖  发布文章 内容标签不能为或超过20字符
 
 
 

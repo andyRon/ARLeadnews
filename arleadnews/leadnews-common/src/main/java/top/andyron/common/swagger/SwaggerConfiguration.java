@@ -29,11 +29,12 @@ public class SwaggerConfiguration {
                 .build();
     }
 
+    ;// TODO 不同微服务的怎么区分？分组？
     private ApiInfo buildApiInfo() {
         Contact contact = new Contact("Andy Ron","","rongming.2008@163.com");
         return new ApiInfoBuilder()
-                .title("AR头条-平台管理API文档")
-                .description("AR头条后台api")
+                .title("AR头条-API文档")
+                .description("AR头条api")
                 .contact(contact)
                 .version("1.0.0").build();
     }
