@@ -20,7 +20,7 @@ import java.util.Date;
 @Data
 @TableName("ap_article")
 public class ApArticle implements Serializable {
-
+    // TODO ID_WORKER过期
     @TableId(value = "id",type = IdType.ID_WORKER)
     private Long id;
 

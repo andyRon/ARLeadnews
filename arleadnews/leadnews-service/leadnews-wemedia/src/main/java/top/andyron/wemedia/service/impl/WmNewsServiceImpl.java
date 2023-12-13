@@ -26,6 +26,7 @@ import top.andyron.utils.thread.WmThreadLocalUtil;
 import top.andyron.wemedia.mapper.WmMaterialMapper;
 import top.andyron.wemedia.mapper.WmNewsMapper;
 import top.andyron.wemedia.mapper.WmNewsMaterialMapper;
+import top.andyron.wemedia.service.WmNewsAutoScanService;
 import top.andyron.wemedia.service.WmNewsService;
 
 import java.util.ArrayList;
@@ -76,6 +77,8 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
         return responseResult;
     }
 
+    @Autowired
+    private WmNewsAutoScanService wmNewsAutoScanService;
     /**
      * 发布修改文章或保存为草稿
      *
@@ -114,6 +117,9 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
 
         // 4 不是草稿，保存文章封面图片与素材的关系，如果当前布局是自动，需要匹配封面图片
         saveRelativeInfoForCover(dto, wmNews, materials);
+
+        // 审核文章
+        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
 
         return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }

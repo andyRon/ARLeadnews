@@ -8,15 +8,18 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * @author andyron
  **/
+@EnableFeignClients(basePackages = "top.andyron.apis")
 @SpringBootApplication
-//        (exclude = DataSourceAutoConfiguration.class) // TODO
 @EnableDiscoveryClient
 @MapperScan("top.andyron.wemedia.mapper")
+@EnableAsync // 开启异步调用
 public class WemediaApplication {
     public static void main(String[] args) {
         SpringApplication.run(WemediaApplication.class, args);

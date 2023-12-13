@@ -1,6 +1,7 @@
 package top.andyron.article.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import top.andyron.model.article.dto.ArticleDto;
 import top.andyron.model.article.dto.ArticleHomeDto;
 import top.andyron.model.article.pojos.ApArticle;
 import top.andyron.model.common.dtos.ResponseResult;
@@ -17,4 +18,11 @@ public interface ApArticleService extends IService<ApArticle> {
      * @return
      */
     public ResponseResult load(Short loadType, ArticleHomeDto dto);
+
+    /**
+     * 保存app端相关文章
+     * @param dto
+     * @return
+     */
+    ResponseResult saveArticle(ArticleDto dto) ;
 }

@@ -1917,55 +1917,467 @@ CREATE TABLE `wm_news` (
 
 ## 4 自媒体文章-自动审核
 
-### 自媒体文章自动审核流程
+文章数据流：
+
+![文章数据流](images/image-20231211110741292.png)
+
+
+
+审核涉及的内容：
+
+- 第三方内容安全审核接口
+- 分布式主键
+- 异步调用
+- feign远程接口
+- 熔断降级
+
+
+
+### 4.1 自媒体文章自动审核流程
+
+审核方式：
+
+- 自动审核
+  文章发布之后，系统自动审核，主要是通过第三方接口对文章内容进行审核（成功、失败、不确定）。
+
+- 人工审核
+  待自动审核返回==不确定==信息时，转到人工审核，由平台管理员进行审核。
+
+
+
+审核流程-多端调用：
+
+![](images/image-20231212131456329.png)
+
+
+
+### 4.2 内容安全第三方接口
+
+#### 内容安全接口选型
+
+内容安全是识别服务，支持对图片、视频、文本、语音等对象进行多样化场景检测，有效降低内容违规风险。
+
+目前很多平台都支持内容检测，如阿里云、腾讯云、百度AI、网易云等国内大型互联网公司都对外提供了API。
+按照性能和收费来看，黑马头条项目使用的就是阿里云的内容安全接口，使用到了图片和文本的审核。
+阿里云收费标准：https://www.aliyun.com/price/product/?spm=a2c4g.11186623.2.10.4146401eg5oeu8#/lvwang/detail 
+
+#### 准备工作
+
+获取阿里云【内容安全】的AccessKeyID和AccessKeySecret。
+
+#### 文本内容审核接口
+
+文本垃圾内容检测：https://help.aliyun.com/document_detail/70439.html?spm=a2c4g.11186623.6.659.35ac3db3l0wV5k 
+
+文本垃圾内容Java SDK: https://help.aliyun.com/document_detail/53427.html?spm=a2c4g.11186623.6.717.466d7544QbU8Lr 
+
+#### 图片审核接口
+
+图片垃圾内容检测：https://help.aliyun.com/document_detail/70292.html?spm=a2c4g.11186623.6.616.5d7d1e7f9vDRz4 
+
+图片垃圾内容Java SDK: https://help.aliyun.com/document_detail/53424.html?spm=a2c4g.11186623.6.715.c8f69b12ey35j4 
+
+#### 项目集成
+
+1. 在leandnews-common模块下，添加阿里云【内容安全】相关工具类
+
+![](images/image-20231213083507097.png)
+
+并在spring.factories文件中添加自动配置
+
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  top.andyron.common.exception.ExceptionCatch,\
+  top.andyron.common.swagger.SwaggerConfiguration,\
+  top.andyron.common.aliyun.GreenImageScan,\
+  top.andyron.common.aliyun.GreenTextScan
+```
+
+
+
+2. 在leadnews-wemedia的nacos配置中心阿里云【内容安全】添加配置：
+
+```yaml
+aliyun:
+ accessKeyId: 
+ secret: 
+#aliyun.scenes=porn,terrorism,ad,qrcode,live,logo
+ scenes: terrorism
+```
+
+3. 在自媒体微服务中测试类中注入审核文本和图片的bean进行测试
+
+
+
+### 4.3 app端文章保存接口
+
+文章的保存是在之前的【4.审核通过】保存到文章微服务中，保存到article库：
+
+![](images/image-20231213111614286.png)
+
+而文章id格式是bigint，不是自增
+
+#### 分布式id
+
+随着业务的增长，文章表可能要占用很大的物理存储空间，为了解决该问题，后期使用数据库分片技术。将一个数据库进行拆分，通过数据库中间件连接。如果数据库中该表选用ID自增策略，则可能产生重复的ID，此时应该使用分布式ID生成策略来生成ID。
+
+![](images/image-20231213111807488.png)
+
+##### 分布式id-技术选型
+
+| **方案**      | **优势**                                    | **劣势**                                                     |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| redis         | （INCR）生成一个全局连续递增 的数字类型主键 | 增加了一个外部组件的依赖，Redis不可用，则整个数据库将无法在插入 |
+| UUID          | 全局唯一，Mysql也有UUID实现                 | 36个字符组成，占用空间大                                     |
+| snowflake算法 | 全局唯一 ，数字类型，存储成本低             | 机器规模大于1024台无法支持                                   |
+
+雪花算法（snowflake）是Twitter开源的分布式ID生成算法，结果是一个long型的ID。其核心思想是：使用41bit作为毫秒数，10bit作为机器的ID（5个bit是数据中心，5个bit的机器ID；可以理解为32个机房，每个机房最多32台机器），12bit作为毫秒内的流水号（意味着每个节点在每毫秒可以产生 4096 个 ID），最后还有一个符号位（第一个），永远是0。
+
+![](images/image-20231213112110656.png)
+
+文章端相关的表都使用雪花算法生成id,包括ap_article、 ap_article_config、 ap_article_content。
+
+mybatis-plus已经集成了雪花算法，完成以下两步即可在项目中集成雪花算法
+
+第一：在实体类中的id上加入如下配置，指定类型为id_worker
+
+```java
+@TableId(value = "id",type = IdType.ID_WORKER)
+private Long id;
+```
+
+第二：在application.yml文件中配置数据中心id和机器id 【在leadnews-article的nacos中配置】
+
+```yaml
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  # 设置别名包扫描路径，通过该属性可以给包中的类注册别名
+  type-aliases-package: top.andyron.model.article.pojos
+  global-config:
+    datacenter-id: 1
+    workerId: 1
+```
+
+datacenter-id:数据中心id(取值范围：0-31)
+
+workerId:机器id(取值范围：0-31)
+
+#### 保存app端文章-思路分析
+
+在文章审核成功以后需要在app的article库中新增文章数据。
+
+> wm_news的article_id对应ap_article的id，wm_news的article_id为空表示新增文章，不为空表示修改
+>
+> 当自媒体中添加文章后，但没有审核成功时article_id为空；
+>
+> 当审核成功后文章添加到app端文章模块并产生文章id，再添加到wm_news的article_id。
+
+1.保存文章信息  ap_article
+2.保存文章配置信息  ap_article_config
+3.保存文章内容 ap_article_content
+
+![](images/image-20231213113733226.png)
 
 
 
 
 
-### 内容安全第三方接口
+#### 保存app端文章-feign接口
+
+自媒体模块通过 远程调用实现 数据保存到文章模块
+
+![](images/image-20231213114649483.png)
+
+`ApArticle`没有文章内容字段，需要在传输对象中添加。
+
+`ResponseResult`结果可能为：
+
+![](images/image-20231213114727906.png)
+
+#### 实现
+
+1. 在leadnews-feign-api中新增接口
+
+导入feign的依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
+
+定义文章端的远程接口:
+
+```java
+package top.andyron.apis.article;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import top.andyron.model.article.dto.ArticleDto;
+import top.andyron.model.common.dtos.ResponseResult;
+
+/**
+ * @author andyron
+ **/
+@FeignClient(value = "leadnews-article")
+public interface IArticleClient {
+
+    @PostMapping("/api/v1/article/save")
+    public ResponseResult saveArticle(@RequestBody ArticleDto dto);
+}
+```
+
+
+
+2. 在leadnews-article中实现feign接口
+
+```java
+@RestController
+public class ArticleClient implements IArticleClient {
+    @Autowired
+    private ApArticleService apArticleService;
+    @Override
+    @PostMapping("/api/v1/article/save")
+    public ResponseResult saveArticle(ArticleDto dto) {
+        return apArticleService.saveArticle(dto);
+    }
+}
+```
+
+3. 在文章微服务中添加`ApArticleConfigMapper`。
+
+在`ApArticleConfig`中添加构造函数，设置一些APP已发布文章默认配置：
+
+```java
+@Data
+@NoArgsConstructor
+@TableName("ap_article_config")
+public class ApArticleConfig implements Serializable {
+
+    public ApArticleConfig(Long articleId){
+        this.articleId = articleId;
+        this.isComment = true;
+        this.isForward = true;
+        this.isDelete = false;
+        this.isDown = false;
+    }
+}
+```
+
+4. 在ApArticleService中新增方法saveArticle，并实现
+
+
+
+5. 测试
+
+POST http://localhost:51802/user/api/v1/article/save
+
+```json
+{
+    "title":"AR头条项目背景",
+    "authoId":1102,
+    "layout":1,
+    "labels":"AR头条项目背景",
+    "publishTime":"2028-03-14T11:35:49.000Z",
+    "images": "http://192.168.0.102:9000/leadnews/2023/12/11/585e27f794e9403681ca5080fe710d0e.jpg",
+    "content":"AR头条项目背景,AR头条项目背景,AR头条项目背景,AR头条项目背景"
+}
+```
+
+会在 `ap_article`、`ap_article_config`、`ap_article_content`保存各一条数据。
+
+可以添加id字段，修改。
+
+### 4.4 自媒体文章自动审核功能实现
+
+wm_news 自媒体文章表
+
+status字段：0 草稿  1 待审核  2 审核失败  3 人工审核  4 人工审核通过  8 审核通过（待发布） 9 已发布
+
+#### 实现
+
+在leadnews-wemedia中的service新增接口`WmNewsAutoScanService`，及其实现
 
 
 
 
 
-### app端文章保存接口
+
+
+#### feign远程接口调用方式
+
+![](images/image-20231213175037041.png)
+
+leadnews-wemedia服务需要依赖了leadnews-feign-apis工程，并且在自媒体的启动类WemediaApplication上开启feign的远程调用即可`@EnableFeignClients(basePackages = "top.andyron.apis")`：
+
+```java
+@EnableFeignClients(basePackages = "top.andyron.apis")
+@SpringBootApplication
+@EnableDiscoveryClient
+@MapperScan("top.andyron.wemedia.mapper")
+public class WemediaApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(WemediaApplication.class, args);
+    }
+}
+
+```
+
+
+
+#### 单元测试
+
+创建单元测试类和方法，打断点测试
+
+
+
+#### 服务降级处理
+
+![](images/image-20231213184825153.png)
+
+- 服务降级是服务自我保护的一种方式，或者保护下游服务的一种方式，用于确保服务不会受请求突增影响变得不可用，确保服务不会崩溃
+- 服务降级虽然会导致请求失败，但是不会导致阻塞。
+
+保护文章微服务
+
+
+
+实现步骤：
+
+1. 在leadnews-feign-api编写降级逻辑
+
+```java
+package top.andyron.apis.article.fallback;
+
+import org.springframework.stereotype.Component;
+import top.andyron.apis.article.IArticleClient;
+import top.andyron.model.article.dto.ArticleDto;
+import top.andyron.model.common.dtos.ResponseResult;
+import top.andyron.model.common.enums.AppHttpCodeEnum;
+
+/**
+ * @author andyron
+ **/
+@Component
+public class IArticleClientFallback implements IArticleClient {
+    @Override
+    public ResponseResult saveArticle(ArticleDto dto) {
+        return ResponseResult.errorResult(AppHttpCodeEnum.SERVER_ERROR, "获取数据失败");
+    }
+}
+```
+
+在自媒体微服务中添加类，扫描降级代码类的包
+
+```java
+package top.andyron.wemedia.config;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * @author andyron
+ **/
+@Configuration
+@ComponentScan("top.andyron.apis.article.fallback")
+public class InitConfig {
+}
+```
+
+
+
+2. 远程接口中指向降级代码
+
+![](images/image-20231213185722271.png)
+
+
+
+3. 在自媒体模块leadnews-wemedia的开启降级
+
+在leadnews-wemedia的nacos配置中心里添加如下内容，开启服务降级，也可以指定服务响应的超时的时间
+
+```yaml
+feign:
+  # 开启feign对hystrix熔断降级的支持
+  hystrix:
+    enabled: true
+  # 修改调用超时时间
+  client:
+    config:
+      default:
+        connectTimeout: 2000
+        readTimeout: 2000
+```
+
+
+
+4. 测试
+
+在文章微服务leadnews-article中类ApArticleServiceImpl的saveArticle中添加：【注意重启】
+
+```java
+        // 为了测试服务降级
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+```
+
+在自媒体端进行审核测试，会出现服务降级的现象【会调用IArticleClientFallback的saveArticle方法】
+
+### 4.5 发布文章提交审核集成
+
+#### 同步调用与异步调用
+
+同步：就是在发出一个调用时，在没有得到结果之前， 该调用就不返回（实时处理）
+
+异步：调用在发出之后，这个调用就直接返回了，没有返回结果（分时处理）
+
+![](images/image-20231213191322672.png)
+
+#### Springboot集成异步线程调用
+
+1. 在自动审核的方法上加上@Async注解（标明要异步调用）
+
+```java
+    @Override
+    @Async  // 标明当前方法是一个异步方法
+    public void autoScanWmNews(Integer id) {
+```
+
+2. 在文章发布成功后调用审核的方法
+
+```java
+   	@Autowired
+    private WmNewsAutoScanService wmNewsAutoScanService;
+
+    @Override
+    public ResponseResult submitNews(WmNewsDto dto) {
+        ...
+
+        // 4 不是草稿，保存文章封面图片与素材的关系，如果当前布局是自动，需要匹配封面图片
+        saveRelativeInfoForCover(dto, wmNews, materials);
+        
+        // 审核文章
+        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+        
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
+    }
+```
 
 
 
 
 
-### 自媒体文章自动审核功能实现
+3. 在自媒体启动类上添加@EnableAsync注解开启异步调用
 
-
-
-
-
-### 发布文章提交审核集成
-
-
-
-
-
-### 文章审核功能-综合测试
-
-
-
-
-
-### 新需求-自管理敏感词
-
-
-
-
-
-### 新需求-图片识别文字审核敏感词
-
-
-
-
-
-### 文章详情-静态文件生成
+```java
+@EnableAsync // 开启异步调用
+public class WemediaApplication {
+```
 
 
 
@@ -1973,7 +2385,245 @@ CREATE TABLE `wm_news` (
 
 
 
-## 05-延迟任务精准发布文章
+### 4.6 文章审核功能-综合测试
+
+#### 服务启动列表
+
+1，nacos服务端
+
+2，article微服务
+
+3，wemedia微服务
+
+4，启动wemedia网关微服务
+
+5，启动wemedia前端系统
+
+
+
+#### 测试情况列表
+
+1，自媒体前端发布一篇正常的文章
+
+   审核成功后，app端的article相关数据是否可以正常保存，自媒体文章状态和app端文章id是否回显
+
+2，自媒体前端发布一篇包含敏感词的文章  🔖
+
+   正常是审核失败， wm_news表中的状态是否改变，成功和失败原因正常保存
+
+3，自媒体前端发布一篇包含敏感图片的文章 🔖
+
+   正常是审核失败， wm_news表中的状态是否改变，成功和失败原因正常保存
+
+
+
+
+
+### 4.7 新需求-自管理敏感词
+
+#### 需求分析
+
+文章审核功能已经交付了，文章也能正常发布审核。突然，产品经理过来说要开会。
+
+会议的内容核心有以下内容：
+
+- 文章审核不能过滤一些敏感词：
+
+  私人侦探、针孔摄象、信用卡提现、广告代理、代开发票、刻章办、出售答案、小额贷款…
+
+
+
+需要完成的功能：
+
+需要自己维护一套敏感词，在文章审核的时候，需要验证文章是否包含这些敏感词
+
+
+
+#### 敏感词-过滤
+
+技术选型
+
+| **方案**               | **说明**                         |
+| ---------------------- | -------------------------------- |
+| 数据库模糊查询         | 效率太低                         |
+| String.indexOf("")查找 | 数据库量大的话也是比较慢         |
+| 全文检索               | 分词再匹配                       |
+| DFA算法                | 确定有穷自动机(一种==数据结构==) |
+
+
+
+#### DFA实现原理
+
+DFA全称为：Deterministic Finite Automaton,即确定有穷自动机。
+
+存储：一次性的把所有的敏感词存储到了多个map中，就是下图表示这种结构
+
+敏感词：冰毒、大麻、大坏蛋
+
+![](images/image-20231213210014870.png)
+
+检索的过程:
+
+![](images/image-20231213210149385.png)
+
+
+
+
+
+#### 自管理敏感词集成到文章审核中
+
+敏感词一般存到一张表中。
+
+1. 创建敏感词表wm_sensitive到leadnews_wemedia库中
+
+```mysql
+CREATE TABLE `wm_sensitive` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `sensitives` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '敏感词',
+  `created_time` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=3201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='敏感词信息表';
+```
+
+
+
+2. 添加WmSensitiveMapper
+
+
+
+3. 在文章审核的代码中添加自管理敏感词审核
+
+```java
+    private boolean handleSensitiveScan(String content, WmNews wmNews) {
+        boolean flag = true;
+        // 获取所有敏感词
+        List<WmSensitive> wmSensitives = wmSensitiveMapper.selectList(Wrappers.<WmSensitive>lambdaQuery().select(WmSensitive::getSensitives));
+        List<String> sensitiveList = wmSensitives.stream().map(WmSensitive::getSensitives).collect(Collectors.toList());
+
+        SensitiveWordUtil.initMap(sensitiveList);
+        Map<String, Integer> map = SensitiveWordUtil.matchWords(content);
+        if (map.size() > 0) {
+            updateWmNews(wmNews, (short) 2, "当前文章中存储违规内容 " + map);
+            flag = false;
+        }
+        return flag;
+    }
+```
+
+
+
+
+
+
+
+### 4.8 新需求-图片识别文字审核敏感词
+
+#### 需求分析
+
+产品经理召集开会，文章审核功能已经交付了，文章也能正常发布审核。对于上次提出的自管理敏感词也很满意，这次会议核心的内容如下：
+
+- 文章中包含的图片要识别文字，过滤掉图片文字的敏感词
+
+
+
+#### 图片文字识别
+
+什么是OCR?
+
+OCR （Optical Character Recognition，光学字符识别）是指电子设备（例如扫描仪或数码相机）检查纸上打印的字符，通过检测暗、亮的模式确定其形状，然后用字符识别方法将形状翻译成计算机文字的过程
+
+| **方案**      | **说明**                                            |
+| ------------- | --------------------------------------------------- |
+| 百度OCR       | 收费                                                |
+| Tesseract-OCR | Google维护的开源OCR引擎，支持Java，Python等语言调用 |
+| Tess4J        | 封装了Tesseract-OCR  ，支持Java调用                 |
+
+Tesseract-OCR 特点：
+
+- Tesseract支持UTF-8编码格式，并且可以“开箱即用”地识别100多种语言。
+- Tesseract支持多种输出格式：纯文本，hOCR（HTML），PDF等
+- 官方建议，为了获得更好的OCR结果，最好提供给高质量的图像。
+- Tesseract进行识别其他语言的训练
+  具体的训练方式，请参考官方提供的文档：https://tesseract-ocr.github.io/tessdoc/
+
+#### Tess4j案例 🔖
+
+1. 创建项目导入tess4j对应的依赖
+
+```xml
+<dependency>
+    <groupId>net.sourceforge.tess4j</groupId>
+    <artifactId>tess4j</artifactId>
+    <version>4.1.1</version>
+</dependency>
+```
+
+
+
+2. 导入中文字体库， 把资料中的tessdata文件夹拷贝到自己的工作空间下。简体中文 `chi_sim.traineddata`
+
+
+
+3. 编写测试类进行测试
+
+
+
+#### 图片文字识别集成到文章审核 🔖
+
+1. 在leadnews-common中创建工具类，简单封装一下tess4j
+
+先导入依赖
+
+在spring.factories配置中添加该类
+
+
+
+2. 在leadnews-wemedia中的配置中添加两个属性
+
+```yaml
+tess4j:
+  data-path: D:\workspace\tessdata
+  language: chi_sim
+```
+
+
+
+3. 在WmNewsAutoScanServiceImpl中的handleImageScan方法上添加如下代码
+
+
+
+
+
+
+
+### 4.9 文章详情-静态文件生成
+
+#### 思路分析
+
+文章端创建app相关文章时，生成文章详情静态页上传到MinIO中
+
+![](images/image-20210709110852966.png)
+
+#### 实现步骤
+
+
+
+
+
+### 思考
+
+分布式事务
+
+![](images/image-20231213223344281.png)
+
+目前，自媒体微服务和文章微服务，如果各自报错，它们相互是不知道
+
+> 作业：使用seata来解决审核过程中的分布式事物的问题
+
+> 文章发布时间是一个未来时间，该如何按照精确时间发布？
+> 例如：如果今天是1月1日写了一篇文章，设定发布时间是1月5日，那这个文章什么时候审核
+
+## 5 延迟任务精准发布文章
 
 ### 文章定时发布
 
