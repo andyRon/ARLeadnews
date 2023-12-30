@@ -2625,27 +2625,753 @@ tess4j:
 
 ## 5 延迟任务精准发布文章
 
-### 文章定时发布
+### 5.1 文章定时发布
+
+延迟任务
+
+![](images/image-20231217125055708.png)
+
+车票30min之内没有支付，当前的就取消了，这就是通过延迟任务完成。
 
 
 
-### 延迟任务概述
+![](images/image-20231217125316495.png)
+
+文章发布，不管是当下发布还是未来某个时间发布，都交给【延迟任务服务】，有它根据你的发布时间来决定什么时候进行审核。
+
+![](images/image-20231217125357326.png)
+
+- 由于可能有多个需求都需要延迟任务，所以就把延迟任务服务化；
+- 为了提升性能，采用redis进行任务数据的存储；
+- 为了保证在可能的并发情况下，数据的准确性，采用了数据库锁机制；【集成乐观锁】
+- 在分布式下，为了解决一个服务中的一个线程去执行一个方法，采用redis实现分布式锁的方案；
+- 为了提升redis的执行效率，采用redis管道，也就是把多个redis操作合并成一个，最终达成提升性能的目的
 
 
 
-### redis实现延迟任务
+### 5.2 延迟任务概述
+
+#### 什么是延迟任务
+
+- 定时任务：有==固定周期==的，有明确的触发时间。
+- 延迟任务：==没有固定==的开始时间，它常常是由一个事件触发的，而在这个事件触发之后的**一段时间**内触发另一个事件，任务可以立即执行，也可以延迟。
+
+![](images/image-20231217144017638.png)
+
+应用场景：
+
+场景一：订单下单之后30分钟后，如果用户没有付钱，则系统自动取消订单；如果期间下单成功，任务取消
+
+场景二：接口对接出现网络问题，1分钟后重试，如果失败，2分钟重试，直到出现阈值终止
+
+#### 延迟任务实现技术对比
+
+##### DelayQueue
+
+JDK自带`DelayQueue` 是一个支持延时获取元素的阻塞队列， 内部采用优先队列 `PriorityQueue` 存储元素，同时元素必须实现 `Delayed` 接口；在创建元素时可以指定多久才可以从队列中获取当前元素，只有在延迟期满时才能从队列中提取元素。
+
+![](images/image-20231217144219854.png)
 
 
 
-### 延迟任务服务实现
+DelayQueue属于排序队列，它的特殊之处在于队列的元素必须实现Delayed接口，该接口需要实现compareTo和getDelay方法
+
+getDelay方法：获取元素在队列中的剩余时间，只有当剩余时间为0时元素才可以出队列。
+
+compareTo方法：用于排序，确定元素出队列的顺序。
+
+**实现：**
+
+1：在测试包jdk下创建延迟任务元素对象DelayedTask，实现compareTo和getDelay方法，
+
+2：在main方法中创建DelayQueue并向延迟队列中添加三个延迟任务，
+
+3：循环的从延迟队列中拉取任务
 
 
 
-### 延迟队列解决精准时间发布文章
+> 使用DelayQueue作为延迟任务，如果程序挂掉之后，任务都是放在内存，消息会丢失，如何保证数据不丢失？
+
+
+
+##### RabbitMQ实现延迟任务（常用）
+
+- TTL：Time To Live (消息存活时间)
+
+- ==死信队列==：Dead Letter Exchange(死信交换机)，当消息成为Dead message后，可以重新发送另一个交换机（死信交换机）
+
+![](images/image-20231217144506985.png)
+
+
+
+##### redis实现（常用，本项目使用）
+
+zset数据类型的去重有序（分数排序）特点进行延迟。例如：时间戳作为score进行排序
+
+![](images/image-20231217144637293.png)
+
+例如：
+
+生产者添加4个任务到延迟队列中，时间毫秒值分别为97、98、99、100 。 当前时间的毫秒值为90，消费者端进行监听，如果当前时间的毫秒值匹配到了延迟队列中的毫秒值就立即消费。
+
+### 5.3 redis实现延迟任务
+
+#### 流程说明
+
+![](images/image-20231217150624431.png)
+
+只是把未来5min（预设时间）中的任务加载到zset中（为了提高效率），定时同步数据库中未来5min的任务到zset，也要定时刷新zset中当时要执行的任务到list中。
+
+问题：
+
+1. 为什么任务需要存储在数据库中？
+
+延迟任务是一个通用的服务，任何需要延迟得任务都可以调用该服务，内存数据库的存储是有限的，需要考虑数据持久化的问题，存储数据库中是一种数据安全的考虑。
+
+2. 为什么redis中使用两种数据类型，list和zset？
+
+效率问题，算法的时间复杂度
+
+原因一：list存储立即执行的任务，zset存储未来的数据
+
+原因二：任务量过大以后，zset的性能会下降
+
+时间复杂度：执行时间（次数）随着数据规模增长的变化趋势
+
+操作redis中的list命令LPUSH：时间复杂度：`O(1)`
+
+操作redis中的zset命令zadd：时间复杂度：`O(M*log((n))`
+
+![](images/image-20231217150419390.png)
+
+3. 在添加zset数据的时候，为什么需要预加载？
+
+如果任务数据特别大，为了防止阻塞，只需要把未来几分钟要执行的数据存储缓存即可，是一种优化的形式
+
+### 5.4 延迟任务服务实现
+
+#### 搭建leadnews-schedule模块
+
+leadnews-schedule是一个通用的服务，单独创建模块来管理任何类型的延迟任务
+
+![](images/image-20231217172522947.png)
+
+1. 在leadnews-service下创建leadnews-schedule模块
+
+2. bootstrap.yml
+
+```yaml
+server:
+  port: 51701
+spring:
+  application:
+    name: leadnews-schedule
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.0.102:8848
+      config:
+        server-addr: 192.168.0.102:8848
+        file-extension: yml
+```
+
+3. 在nacos中添加相应配置
+
+```yaml
+spring:
+  datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/leadnews_schedule?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: root
+      password: 33824
+# 设置Mapper接口所对应的XML文件位置，如果你在Mapper接口中有自定义方法，需要进行该配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  # 设置别名包扫描路径，通过该属性可以给包中的类注册别名
+  type-aliases-package: top.andyron.model.schedule.pojos  
+```
+
+#### 数据库准备
+
+创建leadnews_schedule数据库
+
+```mysql
+CREATE TABLE `taskinfo` (
+  `task_id` bigint NOT NULL COMMENT '任务id',
+  `execute_time` datetime(3) NOT NULL COMMENT '执行时间',
+  `parameters` longblob COMMENT '参数',
+  `priority` int NOT NULL COMMENT '优先级',
+  `task_type` int NOT NULL COMMENT '任务类型',
+  PRIMARY KEY (`task_id`),
+  KEY `index_taskinfo_time` (`task_type`,`priority`,`execute_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+CREATE TABLE `taskinfo_logs` (
+  `task_id` bigint NOT NULL COMMENT '任务id',
+  `execute_time` datetime(3) NOT NULL COMMENT '执行时间',
+  `parameters` longblob COMMENT '参数',
+  `priority` int NOT NULL COMMENT '优先级',
+  `task_type` int NOT NULL COMMENT '任务类型',
+  `version` int NOT NULL COMMENT '版本号,用乐观锁',
+  `status` int DEFAULT '0' COMMENT '状态 0=初始化状态 1=EXECUTED 2=CANCELLED',
+  PRIMARY KEY (`task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+```
+
+> mysql中，blob是一个二进制大型对象，是一个可以存储大量数据的容器；longblob最大存储4G。
+
+##### 数据库自身解决并发的两种策略
+
+- 悲观锁（Pessimistic Lock）
+
+每次去拿数据的时候都认为别人会修改，所以每次在拿数据的时候都会上锁。
+
+- 乐观锁（Optimistic Lock）
+
+每次去拿数据的时候都认为别人不会修改，所以不会上锁，但是在更新的时候会判断一下在此期间别人有没有去更新这个数据，可以使用版本号等机制（也就是比对修改之前的version和提交修改之前的version）
+
+##### mybatis-plus集成乐观锁的使用
+
+1. 在实体类中使用`@Version`标明是一个版本的字段
+
+```java
+		/**
+     * 版本号,用乐观锁
+     */
+    @Version
+    private Integer version;
+```
+
+2. mybatis-plus对乐观锁的支持，在启动类中向容器中放入乐观锁的拦截器
+
+```java
+		/**
+     * mybatis-plus乐观锁支持
+     * @return
+     */
+    @Bean
+    public MybatisPlusInterceptor optimisticLockerInterceptor(){
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+        return interceptor;
+    }
+```
+
+
+
+#### redis实现延迟任务
+
+> docker安装redis
+>
+> ```shell
+> docker pull redis
+> 
+> docker run -d --name redis --restart=always -p 6379:6379 redis --requirepass "leadnews"
+> ```
+
+- 在leadnews-common模块导入redis相关依赖（放在common下，方便其他模块使用）
+
+```xml
+<!--spring data redis & cache-->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<!-- redis依赖commons-pool 这个依赖一定要添加 -->
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-pool2</artifactId>
+</dependency>
+```
+
+- 在leadnews-schedule中集成redis,添加以下nacos配置，链接上redis
+
+```yaml
+spring:
+	redis:
+		host: 192.168.0.102
+		password: 123456
+		port: 6379
+```
+
+- 在leadnews-common模块创建CacheService，操作redis的工具类
+
+要让其它微服务使用，需要添加配置
+
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  top.andyron.common.exception.ExceptionCatch,\
+  top.andyron.common.swagger.SwaggerConfiguration,\
+  top.andyron.common.aliyun.GreenImageScan,\
+  top.andyron.common.aliyun.GreenTextScan,\
+  top.andyron.common.redis.CacheService
+```
+
+
+
+#### 添加任务
+
+1. 创建TaskinfoMapper 和TaskinfoLogsMapper
+2. 创建task类，用于接收添加任务的参数
+
+```java
+package top.andyron.model.schedule.dtos;
+
+import lombok.Data;
+import java.io.Serializable;
+
+@Data
+public class Task implements Serializable {
+    /**
+     * 任务id
+     */
+    private Long taskId;
+    /**
+     * 类型
+     */
+    private Integer taskType;
+    /**
+     * 优先级
+     */
+    private Integer priority;
+    /**
+     * 执行id
+     */
+    private long executeTime;
+    /**
+     * task参数
+     */
+    private byte[] parameters;
+}
+```
+
+
+
+3. 创建TaskService
+   - 添加任务到数据库中
+   - 添加任务到redis中
+     - 如果任务的执行时间小于等于当前时间存入list
+     - 如果任务的执行时间大于当前时间，小于等于预设时间（未来5分钟）存入zset中
+4. 测试
+
+
+
+#### 取消任务
+
+场景：第三接口网络不通，使用延迟任务进行重试，当达到阈值以后，取消任务。
+
+![](images/image-20231228231324883.png)
+
+1. 根据taskid删除任务,修改任务日志状态为 2(取消)
+2. 删除redis中对应的任务数据，包括list和zset
+
+#### 消费任务
+
+![](images/image-20231228231409487.png)
+
+
+
+#### 未来数据定时刷新
+
+![](images/image-20231231021017946.png)
+
+实现步骤：
+
+![](images/image-20231228231521737.png)
+
+##### 问题
+
+> 如何获取zset中所有的key?
+
+方案1：keys 模糊匹配
+
+![](images/image-20231231021113666.png)
+
+keys的模糊匹配功能很方便也很强大，但是在生产环境需要慎用！开发中使用keys的模糊匹配却发现redis的CPU使用率极高，所以公司的redis生产环境将keys命令禁用了！redis是单线程，会被堵塞。
+
+方案2：scan 
+
+![](images/image-20231231021131553.png)
+
+SCAN 命令是一个基于游标的迭代器，SCAN命令每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为SCAN命令的游标参数， 以此来延续之前的迭代过程。
+
+
+
+> 数据如何同步？
+>
+> 两件事：
+> 第一：从zset中查出数据，并删除
+> 第二：把数据存入到list中
+
+
+
+普通redis客户端和服务器交互模式:
+
+![](images/image-20231228232020265.png)
+
+Pipeline请求模型【**==reids管道==**】:
+
+![](images/image-20231228232040024.png)
+
+多个命令一起请求，提高效率。
+
+官方测试结果数据对比:
+
+![](images/image-20231228232109433.png)
+
+##### 具体实现
+
+```java
+   /**
+     * 未来数据定时刷新
+     *
+     * 每分钟执行一次
+     */
+    @Scheduled(cron = "0 */1 * * * ?")
+    public void refresh() {
+        String token = cacheService.tryLock("FUTRUE_TASK_SYNC", 1000 * 30);
+
+        if (StringUtils.isNotBlank(token)) {
+            log.info("未来数据定时刷新---定时任务");
+
+            // 获取所有未来数据的集合key
+            Set<String> futureKeys = cacheService.scan(ScheduleConstants.FUTURE + "*");
+            for (String futureKey : futureKeys) {
+                // 获取所有未来数据的集合key   future_100_50
+                String topicKey = ScheduleConstants.TOPIC + futureKey.split(ScheduleConstants.FUTURE)[1];
+
+                // 按照key和分值查询符合条件的数据
+                Set<String> tasks = cacheService.zRangeByScore(futureKey, 0, System.currentTimeMillis());
+
+                // 同步数据
+                if (!tasks.isEmpty()) {
+                    cacheService.refreshWithPipeline(futureKey, topicKey, tasks);
+                    log.info("成功的将" + futureKey + "刷新到了" + topicKey);
+                }
+            }
+        }
+    }
+```
+
+开启调度任务
+
+```java
+@EnableScheduling  //开启调度任务
+public class ScheduleApplication 
+```
 
 
 
 
+
+#### 分布式锁解决集群下的方法抢占执行
+
+> 问题描述：如果启动两台leadnews-schedule服务，每台服务都会去执行refresh定时任务方法。
+>
+> 展示问题p92 🔖
+
+![](images/image-20231228232217510.png)
+
+
+
+
+
+
+
+分布式锁：控制分布式系统有序的去对共享资源进行操作，通过互斥来保证数据的一致性。
+
+分布式锁的解决方案：
+
+| **方案**  | **说明**                          |
+| --------- | --------------------------------- |
+| 数据库    | 基于表的唯一索引                  |
+| zookeeper | 根据zookeeper中的临时有序节点排序 |
+| redis     | 使用SETNX命令完成                 |
+
+##### redis分布式锁
+
+sexnx （SET if Not eXists） 命令在指定的 key 不存在时，为key设置指定的值。
+
+加锁的思路：
+
+![](images/image-20231231024219837.png)
+
+首先A请求后加锁，B就无法请求；
+
+![](images/image-20231231024443534.png)
+
+30秒后A释放锁，B再请求就成功，同时再加锁。
+
+在CacheService中添加
+
+```java
+    /**
+     * 加锁
+     * @param name 锁名称
+     * @param expire 过期时间，毫秒值
+     * @return
+     */
+    public String tryLock(String name, long expire) {
+        name = name + "_lock";
+        String token = UUID.randomUUID().toString();
+        RedisConnectionFactory factory = stringRedisTemplate.getConnectionFactory();
+        RedisConnection conn = factory.getConnection();
+        try {
+            // 参考redis命令：
+            // set key value [EX seconds] [PX milliseconds] [NX|XX]
+            Boolean result = conn.set(
+                    name.getBytes(),
+                    token.getBytes(),
+                    Expiration.from(expire, TimeUnit.MILLISECONDS),
+                    RedisStringCommands.SetOption.SET_IF_ABSENT
+            );
+            if (result != null && result) {
+                return token;
+            }
+
+        } finally {
+            RedisConnectionUtils.releaseConnection(conn, factory, false);
+        }
+        return null;
+    }
+```
+
+修改：
+
+```java
+@Scheduled(cron = "0 */1 * * * ?")
+public void refresh() {
+  String token = cacheService.tryLock("FUTRUE_TASK_SYNC", 1000 * 30);
+
+  if (StringUtils.isNotBlank(token)) {
+    ...
+  }
+}
+```
+
+🔖测试
+
+
+
+#### 数据库任务定时同步到redis
+
+1. 清理缓存中的数据
+
+因为是查询小于5min中的所有任务，清理缓存是为了防止缓存中有没有消费的任务（防止任务重复）。
+
+```java
+Set<String> topicKeys = cacheService.scan(ScheduleConstants.TOPIC + "*");
+Set<String> futureKeys = cacheService.scan(ScheduleConstants.FUTURE + "*");
+cacheService.delete(topicKeys);
+cacheService.delete(futureKeys);
+```
+
+2. 查询小于未来5分钟的所有任务
+
+```java
+List<Taskinfo> taskinfoList = taskinfoMapper.selectList(Wrappers.<Taskinfo>lambdaQuery().lt(Taskinfo::getExecuteTime, calendar.getTime()));
+```
+
+
+
+3. 新增任务到redis
+
+```java
+for (Taskinfo taskinfo : taskinfoList) {
+  Task task = new Task();
+  BeanUtils.copyProperties(taskinfo,task);
+  task.setExecuteTime(taskinfo.getExecuteTime().getTime());
+  addTaskToCache(task);
+}
+```
+
+
+
+4. 测试
+
+清理掉缓存和数据库任务，添加新的几条任务，然后在删掉一两个缓存任务，重启ScheduleApplication微服务看看是否同步。
+
+
+
+
+
+> 1. 在分布式系统环境下，一个方法在同一时间只能被一个机器的一个线程执行
+> 2. 主要是通过redis的sexnx特性完成分布式锁的功能A获取到锁以后其他客户端不能操作，只能等待A释放锁以后，其他客户端才能操作
+
+### 5.5 延迟队列解决精准时间发布文章
+
+为了让其它微服务也能调用leadnews-schedule，需要leadnews-schedule提供对外的feign远程接口：
+
+![](images/image-20231231031908916.png)
+
+#### 延迟队列服务提供对外接口
+
+- 在leadnews-feign-api模块中定义schedule的feign远程接口：
+
+```java
+@FeignClient("leadnews-schedule")
+public interface IScheduleClient {
+    /**
+     * 添加延迟任务
+     * @param task
+     * @return
+     */
+    @PostMapping("/api/v1/task/add")
+    public ResponseResult addTask(@RequestBody Task task);
+
+    /**
+     * 取消任务
+     * @param taskId
+     * @return
+     */
+    @GetMapping("/api/v1/task/{taskId}")
+    public ResponseResult cancelTask(@PathVariable("taskId") long taskId);
+
+    /**
+     * 按照类型和优先级拉取任务
+     * @param type
+     * @param priority
+     * @return
+     */
+    @GetMapping("/api/v1/task/{type}/{priority}")
+    public ResponseResult poll(@PathVariable("type") int type, @PathVariable("priority") int priority);
+}
+```
+
+在leadnews-schedule中创建上面远程接口的实现：
+
+```
+```
+
+
+
+#### 发布文章集成添加延迟队列接口（添加任务）
+
+![](images/image-20231228233009467.png)
+
+- 在leadnews-wemedia模块中添加一个service：
+
+```java
+@Service
+@Slf4j
+public class WmNewsTaskServiceImpl implements WmNewsTaskService {
+
+    @Autowired
+    private IScheduleClient scheduleClient;
+
+    /**
+     * 添加任务到延迟队列中
+     *
+     * @param id          文章的id
+     * @param publishTime 发布的时间 可以作为任务的执行时间
+     */
+    @Override
+    @Async
+    public void addNewsToTask(Integer id, Date publishTime) {
+        log.info("添加任务到延迟队列中-----begin");
+
+        Task task = new Task();
+        task.setExecuteTime(publishTime.getTime());
+        task.setTaskType(TaskTypeEnum.NEWS_SCAN_TIME.getTaskType());
+        task.setPriority(TaskTypeEnum.NEWS_SCAN_TIME.getPriority());
+        WmNews wmNews = new WmNews();
+        wmNews.setId(id);
+        task.setParameters(ProtostuffUtil.serialize(wmNews));
+
+        scheduleClient.addTask(task);
+
+        log.info("添加任务到延迟队列中-----end");
+    }
+}
+```
+
+- 修改WmNewsServiceImpl中的submitNews()方法：
+
+```java
+    @Override
+    public ResponseResult submitNews(WmNewsDto dto) {
+      ....
+        // 审核文章
+//        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+        wmNewsTaskService.addNewsToTask(wmNews.getId(), wmNews.getPublishTime());
+    ...
+```
+
+
+
+- 测试
+
+启动leadnews-schedule，leandnews-wemedia-gateway，leadnews-wemedia
+
+http://localhost:8802/#/login
+
+
+
+##### 序列化工具对比
+
+`JdkSerialize`：java内置的序列化能将实现了Serilazable接口的对象进行序列化和反序列化， ObjectOutputStream的writeObject()方法可序列化对象生成字节数组
+
+`Protostuff`：google开源的protostuff采用更为紧凑的二进制数组，表现更加优异，然后使用protostuff的编译工具生成pojo类
+
+
+
+```xml
+<dependency>
+  <groupId>io.protostuff</groupId>
+  <artifactId>protostuff-core</artifactId>
+  <version>1.6.0</version>
+</dependency>
+
+<dependency>
+  <groupId>io.protostuff</groupId>
+  <artifactId>protostuff-runtime</artifactId>
+  <version>1.6.0</version>
+</dependency>
+```
+
+
+
+#### 消费任务进行审核文章（拉取任务）
+
+按照固定频率拉去任务，每秒拉取一次。
+
+- 添加拉取任务方法
+
+```java
+    @Autowired
+    private WmNewsAutoScanService wmNewsAutoScanService;
+
+    /**
+     * 消费任务，审核文章
+     * 每1秒拉取任务
+     */
+    @Scheduled(fixedRate = 1000)
+    @Override
+    public void scanNewsByTask() {
+        log.info("消费任务，审核文章");
+        ResponseResult res = scheduleClient.poll(TaskTypeEnum.NEWS_SCAN_TIME.getTaskType(), TaskTypeEnum.NEWS_SCAN_TIME.getPriority());
+        if (res.getCode().equals(200) && res.getData() != null) {
+            Task task = JSON.parseObject(JSON.toJSONString(res.getData()), Task.class);
+            WmNews wmNews = ProtostuffUtil.deserialize(task.getParameters(), WmNews.class);
+            wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+        }
+    }
+```
+
+- 开启调度任务
+
+```java
+@EnableScheduling
+public class WemediaApplication 
+```
+
+- 测试
+
+启动leadnews-schedule，leandnews-wemedia-gateway以及leadnews-article，重启leadnews-wemedia
+
+http://localhost:8802/#/login
+
+🔖
 
 
 
@@ -2659,9 +3385,175 @@ tess4j:
 
 ### kafka
 
+消息中间件对比   
+
+| 特性       | ActiveMQ                               | RabbitMQ                   | RocketMQ                 | Kafka                                    |
+| ---------- | -------------------------------------- | -------------------------- | ------------------------ | ---------------------------------------- |
+| 开发语言   | java                                   | erlang                     | java                     | scala                                    |
+| 单机吞吐量 | 万级                                   | 万级                       | 10万级                   | 100万级                                  |
+| 时效性     | ms                                     | us                         | ms                       | ms级以内                                 |
+| 可用性     | 高（主从）                             | 高（主从）                 | 非常高（分布式）         | 非常高（分布式）                         |
+| 功能特性   | 成熟的产品、较全的文档、各种协议支持好 | 并发能力强、性能好、延迟低 | MQ功能比较完善，扩展性佳 | 只支持主要的MQ功能，主要应用于大数据领域 |
+
+消息中间件对比-选择建议
+
+| **消息中间件** | **建议**                                                     |
+| -------------- | ------------------------------------------------------------ |
+| Kafka          | 追求高吞吐量，适合产生大量数据的互联网服务的数据收集业务     |
+| RocketMQ       | 可靠性要求很高的金融互联网领域,稳定性高，经历了多次阿里双11考验 |
+| RabbitMQ       | 性能较好，社区活跃度高，数据量没有那么大，优先选择功能比较完备的RabbitMQ |
+
+#### kafka介绍
+
+Kafka 是一个分布式流媒体平台,类似于消息队列或企业消息传递系统。kafka官网：http://kafka.apache.org/  
+
+![](images/image-20231214135951026.png)
+
+kafka名词解释
+
+![](images/image-20231214140006878.png)
+
+- producer：发布消息的对象称之为主题生产者（Kafka topic producer）
+
+- topic：Kafka将消息分门别类，每一类的消息称之为一个主题（Topic）
+
+- consumer：订阅消息并处理发布的消息的对象称之为主题消费者（consumers）
+
+- broker：已发布的消息保存在一组服务器中，称之为Kafka集群。集群中的每一个服务器都是一个代理（Broker）。 消费者可以订阅一个或多个主题（topic），并从Broker拉数据，从而消费这些已发布的消息。
 
 
 
+#### kafka安装配置
+
+Kafka对于zookeeper是强依赖，保存kafka相关的节点数据，所以安装Kafka之前必须先安装zookeeper
+
+
+
+
+
+#### kafka入门
+
+
+
+#### kafka高可用设计
+
+##### 集群
+
+- Kafka 的服务器端由被称为 Broker 的服务进程构成，即一个 Kafka 集群由多个 Broker 组成
+
+- 这样如果集群中某一台机器宕机，其他机器上的 Broker 也依然能够对外提供服务。这其实就是 Kafka 提供高可用的手段之一
+
+
+
+##### 备份机制(Replication）
+
+![](images/image-20231214140626267.png)
+
+Kafka 中消息的备份又叫做 副本（Replica）
+
+Kafka 定义了两类副本：
+
+- 领导者副本（Leader Replica）
+
+- 追随者副本（Follower Replica）
+
+**同步方式**
+
+![](images/image-20231214140741381.png)
+
+ISR（in-sync replica）需要同步复制保存的follower
+
+
+
+如果leader失效后，需要选出新的leader，选举的原则如下：
+
+第一：选举时优先从ISR中选定，因为这个列表中follower的数据是与leader同步的
+
+第二：如果ISR列表中的follower都不行了，就只能从其他follower中选取
+
+
+
+极端情况，就是所有副本都失效了，这时有两种方案
+
+第一：等待ISR中的一个活过来，选为Leader，数据可靠，但活过来的时间不确定
+
+第二：选择第一个活过来的Replication，不一定是ISR中的，选为leader，以最快速度恢复可用性，但数据不一定完整
+
+#### kafka生产者详解 
+
+##### 发送类型
+
+- 同步发送
+
+  使用send()方法发送，它会返回一个Future对象，调用get()方法进行等待，就可以知道消息是否发送成功
+
+```java
+RecordMetadata recordMetadata = producer.send(kvProducerRecord).get();
+System.out.println(recordMetadata.offset());
+```
+
+- 异步发送
+
+  调用send()方法，并指定一个回调函数，服务器在返回响应时调用函数
+
+```java
+//异步消息发送
+producer.send(kvProducerRecord, new Callback() {
+    @Override
+    public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+        if(e != null){
+            System.out.println("记录异常信息到日志表中");
+        }
+        System.out.println(recordMetadata.offset());
+    }
+});
+```
+
+##### 参数详解
+
+- ack
+
+
+
+- retries
+
+
+
+- 消息压缩
+
+
+
+#### kafka消费者详解
+
+##### 消费者组
+
+- 消费者组（Consumer Group） ：指的就是由一个或多个消费者组成的群体
+
+- 一个发布在Topic上消息被分发给此消费者组中的一个消费者
+
+  - 所有的消费者都在一个组中，那么这就变成了queue模型
+
+  - 所有的消费者都在不同的组中，那么就完全变成了发布-订阅模型
+
+
+
+##### 消息有序性
+
+应用场景：
+
+- 即时消息中的单对单聊天和群聊，保证发送方消息发送顺序与接收方的顺序一致
+
+- 充值转账两个渠道在同一个时间进行余额变更，短信通知必须要有顺序
+
+
+
+topic分区中消息只能由消费者组中的唯一一个消费者处理，所以消息肯定是按照先后顺序进行处理的。但是它也仅仅是保证Topic的一个分区顺序处理，不能保证跨分区的消息先后处理顺序。 所以，如果你想要顺序的处理Topic的所有消息，那就只提供一个分区。
+
+##### 提交和偏移量
+
+kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可以使用kafka来追踪消息在分区的位置（偏移量）
+
+消费者会往一个叫做_consumer_offset的特殊主题发送消息，消息里包含了每个分区的偏移量。如果消费者发生崩溃或有新的消费者加入群组，就会触发再均衡
 
 
 
@@ -2675,26 +3567,34 @@ tess4j:
 
 
 
+### 自媒体文章上下架功能完成
+
+
+
+## 7 app端文章搜索
+
+
+
+### 搭建ElasticSearch环境
 
 
 
 
-## 07-app端文章搜索
 
 
 
-## 08-平台管理
+## 8 平台管理
 
 
 
-## 09-用户行为
+## 9 用户行为
 
 
 
-## 10-xxl-Job分布式任务调度
+## 10 xxl-Job分布式任务调度
 
 定时计算热点文章
 
 
 
-## 11-热点文章-实时计算
+## 11 热点文章-实时计算

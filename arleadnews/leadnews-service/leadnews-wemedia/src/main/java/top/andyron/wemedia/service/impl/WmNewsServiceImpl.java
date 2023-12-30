@@ -28,6 +28,7 @@ import top.andyron.wemedia.mapper.WmNewsMapper;
 import top.andyron.wemedia.mapper.WmNewsMaterialMapper;
 import top.andyron.wemedia.service.WmNewsAutoScanService;
 import top.andyron.wemedia.service.WmNewsService;
+import top.andyron.wemedia.service.WmNewsTaskService;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -79,6 +80,10 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
 
     @Autowired
     private WmNewsAutoScanService wmNewsAutoScanService;
+
+    @Autowired
+    private WmNewsTaskService wmNewsTaskService;
+
     /**
      * 发布修改文章或保存为草稿
      *
@@ -119,7 +124,9 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
         saveRelativeInfoForCover(dto, wmNews, materials);
 
         // 审核文章
-        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+//        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+        wmNewsTaskService.addNewsToTask(wmNews.getId(), wmNews.getPublishTime());
+
 
         return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }

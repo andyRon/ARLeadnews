@@ -2,4 +2,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.common.exception.ExceptionCatch,\
   top.andyron.common.swagger.SwaggerConfiguration,\
   top.andyron.common.aliyun.GreenImageScan,\
-  top.andyron.common.aliyun.GreenTextScan
+  top.andyron.common.aliyun.GreenTextScan,\
+  top.andyron.common.redis.CacheService
