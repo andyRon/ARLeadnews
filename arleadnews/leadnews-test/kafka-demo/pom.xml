@@ -5,18 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>top.andyron</groupId>
-        <artifactId>arleadnews</artifactId>
+        <artifactId>leadnews-test</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>leadnews-test</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>freemarker-demo</module>
-        <module>minio-demo</module>
-        <module>tess4j-demo</module>
-        <module>kafka-demo</module>
-    </modules>
+    <artifactId>kafka-demo</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -24,4 +17,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+        </dependency>
+    </dependencies>
 </project>
