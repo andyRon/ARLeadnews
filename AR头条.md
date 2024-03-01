@@ -1163,7 +1163,7 @@ Warning: The standard parity is set to 0. This can lead to data loss.
 >
 > minioadmin
 >
-> 访问本地9000端口即可 http://192.168.0.102:9000
+> 访问本地9000端口即可 http://localhost:9000
 
 #### minio快速入门
 
@@ -3373,19 +3373,17 @@ producer.send(kvProducerRecord, new Callback() {
 
 ##### 参数详解
 
-- ack
+[kafka详细配置](resource/kafka配置.md)
+
+- ack  消息确认机制
 
 | **确认机制**     | **说明**                                                     |
 | ---------------- | ------------------------------------------------------------ |
-| acks=0           | 生产者在成功写入消息之前不会等待任何来自服务器的响应,消息有丢失的风险，但是速度最快 |
-| acks=1（默认值） | 只要集群首领节点收到消息，生产者就会收到一个来自服务器的成功响应 |
+| acks=0           | 生产者在成功写入消息之前**不会等待**任何来自服务器的响应,消息有丢失的风险，但是速度最快 |
+| acks=1（默认值） | 只要集群首领节点收到消息，生产者就会收到一个来自服务器的**成功响应** |
 | acks=all         | 只有当所有参与赋值的节点全部收到消息时，生产者才会收到一个来自服务器的成功响应 |
 
-
-
-
-
-- retries
+- retries  重试次数
 
 ```java
 //设置重试次数
@@ -3393,8 +3391,6 @@ prop.put(ProducerConfig.RETRIES_CONFIG,10);
 ```
 
 生产者从服务器收到的错误有可能是临时性错误，在这种情况下，retries参数的值决定了生产者可以重发消息的次数，如果达到这个次数，生产者会放弃重试返回错误，默认情况下，生产者会在每次重试之间等待100ms
-
-
 
 - 消息压缩
 
@@ -3417,15 +3413,15 @@ prop.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,"gzip");
 
 #### kafka消费者详解
 
-![](images/image-20240229141057990.png)
-
 ##### 消费者组
+
+![](images/image-20240229141057990.png)
 
 - 消费者组（Consumer Group） ：指的就是由一个或多个消费者组成的群体
 - 一个发布在Topic上消息被分发给此消费者组中的一个消费者
 
-  - 所有的消费者都在一个组中，那么这就变成了queue模型
-  - 所有的消费者都在不同的组中，那么就完全变成了发布-订阅模型
+  - 所有的消费者都在一个组中，那么这就变成了==queue模型==
+  - 所有的消费者都在不同的组中，那么就完全变成了==发布-订阅模型==
 
 ##### 消息有序性
 
@@ -3433,8 +3429,11 @@ prop.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,"gzip");
 
 - 即时消息中的单对单聊天和群聊，保证发送方消息发送顺序与接收方的顺序一致
 - 充值转账两个渠道在同一个时间进行余额变更，短信通知必须要有顺序
+- ...
 
+![](images/image-20240301111434538.png)
 
+kafka集群托管4个分区（P0-P3），2个消费者组，消费组A有2个消费者，消费组B有4个。
 
 
 
@@ -3446,17 +3445,25 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 消费者会往一个叫做`_consumer_offset`的特殊主题发送消息，消息里包含了每个分区的偏移量。如果消费者发生崩溃或有新的消费者加入群组，就会触发**再均衡**。
 
+![](images/image-20240301111755975.png)
 
+![](images/image-20240301111730050.png)
 
 ##### 偏移量
 
+![](images/image-20240301112000503.png)
 
+如果提交偏移量小于客户端处理的最后一个消息的偏移量，那么处于两个偏移量之间的消息就会被重复处理。
 
-##### 偏移量提交方式
+![](images/image-20240301112122524.png)
+
+如果提交的偏移量大于客户端的最后一个消息的偏移量，那么处于两个偏移量之间的消息将会丢失。
+
+##### 偏移量提交方式🔖
 
 提交偏移量的方式有两种，分别是
 
-- 自动提交偏移量
+- 自动提交偏移量【默认】
 
 当enable.auto.commit被设置为true，提交方式就是让消费者自动提交偏移量，每隔5秒消费者会自动把从poll()方法接收的最大偏移量提交上去。
 
@@ -3465,12 +3472,200 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
   当enable.auto.commit被设置为false可以有以下三种提交方式
 
   + 提交当前偏移量（同步提交）
+
+    ```java
+    while (true) {  
+      ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+      for (ConsumerRecord<String, String> record : records) {
+        System.out.println(record.value());
+        System.out.println(record.key());
+        try {
+          consumer.commitSync();//同步提交当前最新的偏移量
+        } catch (CommitFailedException e){
+          System.out.println("记录提交失败的异常："+e);
+        }
+      }
+    }
+    ```
+
+    
+
   + 异步提交
+
+    ```java
+    while (true) {  
+      ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+      for (ConsumerRecord<String, String> record : records) {
+        System.out.println(record.value());
+        System.out.println(record.key());
+      }
+      consumer.commitAsync(new OffsetCommitCallback() {
+        @Override
+        public void onComplete(Map<TopicPartition, OffsetAndMetadata> map, Exception e) {
+          if(e!=null){
+            System.out.println("记录错误的提交偏移量："+ map+",异常信息"+e);
+          }
+        }
+      });
+    }
+    ```
+
+    
+
   + 同步和异步组合提交
+
+    ```java
+    try {
+      while (true){
+        ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+        for (ConsumerRecord<String, String> record : records) {
+          System.out.println(record.value());
+          System.out.println(record.key());
+        }
+        consumer.commitAsync();
+      }
+    } catch (Exception e){
+      e.printStackTrace();
+      System.out.println("记录错误信息："+e);
+    } finally {
+      try { 
+        consumer.commitSync();
+      } finally {
+        consumer.close();
+      }
+    }
+    ```
+
+    
+
+​		
 
 
 
 ### 6.3 springboot集成kafka
+
+#### spring boot集成kafka收发消息
+
+1. 导入spring-kafka依赖信息
+
+```xml
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+    </dependencies>
+```
+
+2. 在resources下创建文件application.yml
+
+```yaml
+server:
+  port: 9991
+spring:
+  application:
+    name: kafka-demo
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: ${spring.application.name}-test
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+```
+
+3. 消息生产者
+
+```java
+@RestController
+public class HelloController {
+    @Autowired
+    private KafkaTemplate<String,String> kafkaTemplate;
+
+    @GetMapping("/hello")
+    public String hello() {
+        // 第一个参数：topics
+        // 第二个参数：消息内容
+        kafkaTemplate.send("andy-kafka-hello","成为优秀的程序员");
+        return "ok";
+    }
+}
+```
+
+4. 消息消费者
+
+```java
+@Component
+public class HelloListener {
+    @KafkaListener(topics = {"andy-kafka-hello"})
+    public void onMessage(String message){
+        if(!StringUtils.isEmpty(message)){
+            System.out.println(message);
+        }
+    }
+}
+```
+
+5. 编写启动类
+
+```java
+```
+
+6. 测试：启动，访问 http://localhost:9991/hello
+
+#### 传递消息为对象
+
+目前springboot整合后的kafka，因为序列化器是`StringSerializer`，这个时候如果需要传递对象可以有两种方式
+
+- 方式一：可以自定义序列化器，对象类型众多，这种方式通用性不强，本章节不介绍
+- 方式二：可以把要传递的对象进行转json字符串，接收消息后再转为对象即可，本项目采用这种方式
+
+```java
+    @GetMapping("/hello2")
+    public String hello2() {
+        User user = new User();
+        user.setName("zhangsan");
+        user.setAge(18);
+        kafkaTemplate.send("andy-kafka-hello2", JSON.toJSONString(user));
+        return "ok";
+    }
+```
+
+```java
+    @KafkaListener(topics = {"andy-kafka-hello2"})
+    public void onMessage2(String message){
+        if(!StringUtils.isEmpty(message)){
+            User user = JSONObject.parseObject((String) message, User.class);
+            System.out.println(user);
+        }
+    }
+```
 
 
 
@@ -3480,9 +3675,11 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 #### 需求分析
 
+![](images/image-20240301141722652.png)
+
 **已发表且已上架**的文章可以下架
 
-
+![](images/image-20240301142130702.png)
 
 **已发表且已下架**的文章可以上架
 
@@ -3492,33 +3689,140 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 ![](images/image-20240229142728250.png)
 
+`wm_news`
+
+`ap_article_config`
+
+
+
 #### 接口定义
 
 ![](images/image-20240229142832662.png)
 
 #### 消息传递article端文章上下架
 
-1. 导入kafka依赖
+🔖p111
+
+```java
+    @ApiOperation(value = "文章上下架")
+    @PostMapping("/downOrUp")
+    public ResponseResult DownOrUp(@RequestBody WmNewsDto dto) {
+        return wmNewsService.DownOrUp(dto);
+    }
+```
 
 
 
-2. 在自媒体端的nacos配置中心配置kafka的生产者
+
+
+1. 导入kafka依赖【leadnews-common模块】
+
+```xml
+<dependency>
+  <groupId>org.springframework.kafka</groupId>
+  <artifactId>spring-kafka</artifactId>
+</dependency>
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka-clients</artifactId>
+</dependency>
+```
 
 
 
-3. 在自媒体端文章上下架后发送消息
+2. 在自媒体端的nacos配置中心【leadnews-wemedia】，添加kafka的生产者配置
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+```
 
 
 
-4. 在article端的nacos配置中心配置kafka的消费者
+3. 在自媒体端文章上下架后，发送消息
+
+`WmNewsServiceImpl::DownOrUp`
+
+```java
+            if(wmNews.getArticleId() != null){
+                //发送消息，通知article修改文章的配置
+                Map<String,Object> map = new HashMap<>();
+                map.put("articleId",wmNews.getArticleId());
+                map.put("enable",dto.getEnable());
+                kafkaTemplate.send(WmNewsMessageConstants.WM_NEWS_UP_OR_DOWN_TOPIC, JSON.toJSONString(map));
+            }
+```
+
+4. 在article端的nacos配置中心【leadnews-article】，添加kafka的消费者配置
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ${spring.application.name}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+```
 
 
 
-5. 在article端编写监听，接收数据
+5. 在article端编写监听【leadnews-article】，接收数据
+
+```java
+@Component
+@Slf4j
+public class ArticleIsDownListener {
+
+    @Autowired
+    private ApArticleConfigService apArticleConfigService;
+
+    @KafkaListener(topics = WmNewsMessageConstants.WM_NEWS_UP_OR_DOWN_TOPIC)
+    public void onMessage(String message){
+        if(StringUtils.isNotBlank(message)){
+            Map map = JSON.parseObject(message, Map.class);
+            apArticleConfigService.updateByMap(map);
+        }
+    }
+}
+```
 
 
 
 6. 修改ap_article_config表的数据
+
+```java
+@Service
+@Slf4j
+@Transactional
+public class ApArticleConfigServiceImpl extends ServiceImpl<ApArticleConfigMapper, ApArticleConfig> implements ApArticleConfigService {
+    /**
+     * 修改文章
+     * @param map
+     */
+    @Override
+    public void updateByMap(Map map) {
+        // 0 下架  1 上架
+        Object enable = map.get("enable");
+        boolean isDown = true;
+        if(enable.equals(1)){
+           isDown = false;
+        }
+        //修改文章
+        update(Wrappers.<ApArticleConfig>lambdaUpdate().eq(ApArticleConfig::getArticleId,map.get("articleId"))
+                .set(ApArticleConfig::getIsDown,isDown));
+    }
+}
+```
+
+7. 测试 🔖
+
+
 
 
 
@@ -3563,6 +3867,8 @@ docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elas
   	把资料中的elasticsearch-analysis-ik-7.4.0.zip上传到服务器上,放到对应目录（plugins）解压
 
 - 测试
+
+
 
 ### 7.2 app端文章搜索
 

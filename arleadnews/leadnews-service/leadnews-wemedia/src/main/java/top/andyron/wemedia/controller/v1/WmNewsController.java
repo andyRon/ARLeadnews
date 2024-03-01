@@ -31,4 +31,10 @@ public class WmNewsController {
     public ResponseResult submitNews(@RequestBody WmNewsDto dto){
         return wmNewsService.submitNews(dto);
     }
+
+    @ApiOperation(value = "文章上下架")
+    @PostMapping("/downOrUp")
+    public ResponseResult DownOrUp(@RequestBody WmNewsDto dto) {
+        return wmNewsService.DownOrUp(dto);
+    }
 }
