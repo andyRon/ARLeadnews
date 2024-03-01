@@ -20,10 +20,10 @@ public class ConsumerQuickStart {
         // 1.添加kafka的配置信息
         Properties properties = new Properties();
         // kafka的连接地址
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "10.211.55.5:9092");
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         // 消费者组
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "group2");
-        // 消息的反序列化器
+        // key、value的反序列化器
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -40,6 +40,7 @@ public class ConsumerQuickStart {
             for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
                 System.out.println(consumerRecord.key());
                 System.out.println(consumerRecord.value());
+                System.out.println(consumerRecord.partition());
             }
         }
 

@@ -1,5 +1,6 @@
 AR头条
------
+------
+
 测试
 
 https://www.bilibili.com/video/BV1Qs4y1v7x4
@@ -26,12 +27,8 @@ https://www.bilibili.com/video/BV1Qs4y1v7x4
 ### 项目前置知识
 
 - Springboot灵活使用的程度
-
 - Spring cloud 入门程度
-
 - Nacos基本使用程度
-
-
 
 ### 怎样学习项目
 
@@ -64,20 +61,16 @@ https://www.bilibili.com/video/BV1Qs4y1v7x4
 
 ![](images/image-20231002075450779.png)
 
-
-
 课程大纲：
 
-| 章节                           | 天数 | 内容                                                         |
-| ------------------------------ | ---- | ------------------------------------------------------------ |
-| 第一章 环境搭建                | 1    | springboot、springcloud、nacos、swagger                      |
-| 第二章 文章列表查看            | 2    | freemarker、OSS、CDN、ElasticSearch、Redis                   |
-| 第三章 热点文章计算            | 3    | kafka、kafkaStream、xxl-job、Redis                           |
-| 第四章 CMS自媒体端文章发布审核 | 3    | 第三方接口、延迟队列、                                       |
-| 第五章 项目部署 数据迁移       | 2    | Hbase、Jenkins、Git、Docker                                  |
+| 章节                           | 天数 | 内容                                                                               |
+| ------------------------------ | ---- | ---------------------------------------------------------------------------------- |
+| 第一章 环境搭建                | 1    | springboot、springcloud、nacos、swagger                                            |
+| 第二章 文章列表查看            | 2    | freemarker、OSS、CDN、ElasticSearch、Redis                                         |
+| 第三章 热点文章计算            | 3    | kafka、kafkaStream、XXL-JOB、Redis                                                 |
+| 第四章 CMS自媒体端文章发布审核 | 3    | 第三方接口、延迟队列、                                                             |
+| 第五章 项目部署 数据迁移       | 2    | Hbase、Jenkins、Git、Docker                                                        |
 | 项目实战                       | 4    | app端-文章行为、<br />app端-评论系统、<br />自媒体端-评论管理、<br />自媒体端-报表 |
-
-
 
 #### 环境搭建
 
@@ -86,8 +79,6 @@ https://www.bilibili.com/video/BV1Qs4y1v7x4
 目标：接口测试工具及前后端联调
 
 ![](images/image-20231002074108700.png)
-
-
 
 #### 业务说明
 
@@ -111,8 +102,6 @@ https://www.bilibili.com/video/BV1Qs4y1v7x4
 
 ![](images/image-20231002090304625.png)
 
-
-
 - 管理平台相当于AR头条的官方平台，权限比较大
 
 ![](images/image-20231207114854942.png)
@@ -120,9 +109,9 @@ https://www.bilibili.com/video/BV1Qs4y1v7x4
 ![](images/image-20231002090408535.png)
 
 项目演示地址：
-平台管理：http://heima-admin-java.research.itcast.cn 
-自媒体：http://heime-media-java.research.itcast.cn 
-app端：http://heima-app-java.research.itcast.cn 
+平台管理：http://heima-admin-java.research.itcast.cn
+自媒体：http://heime-media-java.research.itcast.cn
+app端：http://heima-app-java.research.itcast.cn
 
 #### 项目术语
 
@@ -137,10 +126,6 @@ app端：http://heima-app-java.research.itcast.cn
 
 ![](images/f3accd2ba01c41b0a9ac98370241eba3.png)
 
-
-
-
-
 基础层
 
 ![](images/image-20231002075147758.png)
@@ -149,8 +134,6 @@ app端：http://heima-app-java.research.itcast.cn
 
 ![](images/image-20231002075217399.png)
 
-
-
 ### nacos环境搭建
 
 Centos 虚拟机
@@ -158,13 +141,11 @@ Centos 虚拟机
 #### docker安装Nacos安装
 
 1. 使用vm虚拟机打开资料中的contos7镜像
-
 2. docker拉取镜像
 
    ```shell
    docker pull nacos/nacos-server:1.2.0
    ```
-
 3. 创建容器
 
    ```shell
@@ -177,17 +158,17 @@ Centos 虚拟机
 > -d 创建一个守护式容器在后台运行
 
 报错：
+
 ```
 WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 
 ```
+
 因为macos m1 ，添加 `--platform linux/arm64`
 
 ```shell
 docker run --platform linux/arm64 --env MODE=standalone --name nacos --restart=always -d -p 8848:8848 nacos/nacos-server:1.2.0
 ```
-
-
 
 🔖问题：
 
@@ -200,15 +181,7 @@ docker: image with reference docker.io/nacos/nacos-server:1.2.0 was found but do
 See 'docker run --help'.
 ```
 
-
-
-
-
-
-
-4. 访问地址：http://10.211.55.5:8848/nacos 
-
-
+4. 访问地址：http://10.211.55.5:8848/nacos
 
 使用本地macos上，源码安装启动nacos  `./startup.sh -m standalone` (单机模式运行)
 
@@ -216,12 +189,7 @@ http://localhost:8848/nacos
 
 账号密码都是nacos
 
-
-
-
 ### 初始工程搭建
-
-
 
 #### 工程主题结构
 
@@ -236,13 +204,9 @@ arleadnews								父工程，统一管理项目依赖（定义通用包的版�
 		leadnews-test					测试案例
 ```
 
-
-
 #### 全局异常
 
 ![](images/image-20231207231920204.png)
-
-
 
 ### 登录
 
@@ -253,16 +217,15 @@ arleadnews								父工程，统一管理项目依赖（定义通用包的版�
 - 用户点击**开始使用**
 
   登录后的用户权限较大，可以查看，也可以操作（点赞，关注，评论）
-
 - 用户点击**不登录，先看看**
 
-​       游客只有查看的权限
+    游客只有查看的权限
 
 #### 表结构分析
 
 关于app端用户相关的内容较多，可以单独设置一个库leadnews_user
 
-| **表名称**       | **说明**          |
+| **表名称** | **说明**    |
 | ---------------- | ----------------- |
 | ap_user          | APP用户信息表     |
 | ap_user_fan      | APP用户粉丝信息表 |
@@ -305,8 +268,6 @@ md5是不可逆加密，md5相同的密码每次加密都一样，不太安全�
 
 ![](images/image-20231207233934748.png)
 
-
-
 #### 用户端（运营端）微服务搭建
 
 在leadnews-service下创建工程leadnews-user
@@ -327,17 +288,11 @@ mybatis-plus:
   type-aliases-package: top.andyron.model.user.pojos
 ```
 
-
-
 #### 登录功能实现
 
 ##### 接口定义
 
 ![](images/image-20231208000615566.png)
-
-
-
-
 
 快捷键ctrl + a  （ctrl + i）
 
@@ -352,11 +307,7 @@ mybatis-plus:
 1. 用户输入了用户名和密码进行登录，校验成功后返回jwt（基于当前用户的id生成）
 2. 用户游客登录，生成jwt返回（基于默认值0生成）
 
-
-
 ### 接口工具postman、swagger、knife4j
-
-
 
 #### swagger
 
@@ -375,35 +326,31 @@ Spring已经将Swagger纳入自身的标准，建立了Spring-swagger项目，�
 
 在leadnews-common中进行配置即可，因为其他微服务工程都直接或间接依赖即可。
 
-
-
 ##### swagger常用注解
 
-@Api：修饰整个类，描述Controller的作用  
+@Api：修饰整个类，描述Controller的作用
 
-@ApiOperation：描述一个类的一个方法，或者说一个接口  
+@ApiOperation：描述一个类的一个方法，或者说一个接口
 
-@ApiParam：单个参数的描述信息  
+@ApiParam：单个参数的描述信息
 
-@ApiModel：用对象来接收参数  
+@ApiModel：用对象来接收参数
 
-@ApiModelProperty：用对象接收参数时，描述对象的一个字段  
+@ApiModelProperty：用对象接收参数时，描述对象的一个字段
 
-@ApiResponse：HTTP响应其中1个描述  
+@ApiResponse：HTTP响应其中1个描述
 
-@ApiResponses：HTTP响应整体描述  
+@ApiResponses：HTTP响应整体描述
 
-@ApiIgnore：使用该注解忽略这个API  
+@ApiIgnore：使用该注解忽略这个API
 
-@ApiError ：发生错误返回的信息  
+@ApiError ：发生错误返回的信息
 
-@ApiImplicitParam：一个请求参数  
+@ApiImplicitParam：一个请求参数
 
 @ApiImplicitParams：多个请求参数的描述信息
 
-
-
- @ApiImplicitParam属性：
+@ApiImplicitParam属性：
 
 | 属性         | 取值   | 作用                                          |
 | ------------ | ------ | --------------------------------------------- |
@@ -423,8 +370,6 @@ Spring已经将Swagger纳入自身的标准，建立了Spring-swagger项目，�
 |              | false  | 非必填                                        |
 | defaultValue |        | 默认值                                        |
 
-
-
 启动微服务，访问 http://localhost:51801/swagger-ui.html
 
 ```json
@@ -433,8 +378,6 @@ Spring已经将Swagger纳入自身的标准，建立了Spring-swagger项目，�
   "phone": "13511223456"
 }
 ```
-
-
 
 #### knife4j
 
@@ -463,8 +406,6 @@ gitee地址：https://gitee.com/xiaoym/knife4j
 </dependency>
 ```
 
-
-
 ```java
 @Configuration
 @EnableSwagger2
@@ -473,10 +414,10 @@ gitee地址：https://gitee.com/xiaoym/knife4j
 public class SwaggerConfiguration2 {
 ```
 
-| 注解              | 说明                                                         |
-| ----------------- | ------------------------------------------------------------ |
-| `@EnableSwagger2` | 该注解是Springfox-swagger框架提供的使用Swagger注解，该注解必须加 |
-| `@EnableKnife4j`  | 该注解是`knife4j`提供的增强注解,Ui提供了例如动态参数、参数过滤、接口排序等增强功能,如果你想使用这些增强功能就必须加该注解，否则可以不用加 |
+| 注解                | 说明                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@EnableSwagger2` | 该注解是Springfox-swagger框架提供的使用Swagger注解，该注解必须加                                                                             |
+| `@EnableKnife4j`  | 该注解是 `knife4j`提供的增强注解,Ui提供了例如动态参数、参数过滤、接口排序等增强功能,如果你想使用这些增强功能就必须加该注解，否则可以不用加 |
 
 ```
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
@@ -484,13 +425,9 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.common.swagger.SwaggerConfiguration2
 ```
 
-
-
 http://localhost:51801/doc.html
 
 🔖  为什么会和swagger冲突
-
-
 
 ### app端网关
 
@@ -506,8 +443,6 @@ leadnews-gateway									管理网关
 		leadnews-wemedia-gateway			自媒体网关
 		leadnews-app-gateway					app网关
 ```
-
-
 
 #### 实现
 
@@ -555,10 +490,6 @@ spring:
 
 在nacos的配置中心创建dataid为leadnews-app-gateway的yml配置
 
-
-
-
-
 ```yaml
 spring:
   cloud:
@@ -585,13 +516,9 @@ spring:
             - StripPrefix= 1
 ```
 
-
-
 环境搭建完成以后，启动项目网关和用户两个服务，使用postman进行测试
 
-请求地址：http://localhost:51601/user/api/v1/login/login_auth   
-
-
+请求地址：http://localhost:51601/user/api/v1/login/login_auth
 
 #### 认证过滤器
 
@@ -601,11 +528,7 @@ spring:
 
 ![](images/image-20231208131031979.png)
 
-在leandews-app-gateway中创建`AuthorizeFilter`
-
-
-
-
+在leandews-app-gateway中创建 `AuthorizeFilter`
 
 ### App前端集成
 
@@ -613,19 +536,12 @@ nginx方式集成前端项目
 
 ![](images/image-20231208133108999.png)
 
-
-
-
-
 - 前端项目app-web
-
-
-
 - 配置nginx
 
 > 每个项目单独创建一个配置文件，因为之后还有很多项目。
 
-在nginx安装的conf目录下新建一个文件夹`leadnews.conf`,在当前文件夹中新建`leadnews-app.conf`文件:
+在nginx安装的conf目录下新建一个文件夹 `leadnews.conf`,在当前文件夹中新建 `leadnews-app.conf`文件:
 
 ```nginx
 upstream  leadnews-app-gateway {
@@ -638,7 +554,7 @@ server {
 		root /Users/andyron/myfield/git/ARLeadnews/app-web/;
 		index index.html;
 	}
-	
+
 	location ~/app/(.*) {
 		proxy_pass http://leadnews-app-gateway/$1;
 		proxy_set_header HOST $host;  # 不改变源请求头的值
@@ -650,7 +566,7 @@ server {
 }
 ```
 
-在nginx.conf中引入`leadnews-app.conf`文件：
+在nginx.conf中引入 `leadnews-app.conf`文件：
 
 ```nginx
 http {
@@ -659,19 +575,13 @@ http {
 }
 ```
 
-
-
 - 重新加载配置文件
 
 `nginx -s reload`
 
-
-
 - 测试
 
  http://localhost:8801
-
-
 
 > 从业务角度分析如何分表
 >
@@ -740,19 +650,14 @@ CREATE TABLE `ap_article` (
 2. ﻿﻿﻿把text，blob等**大字段**拆分出来单独放在一张表
 3. ﻿﻿﻿**经常组合查询的字段**单独放在一张表中
 
-
-
 #### 实现思路
 
 ![](images/image-20231208155627228.png)
 
 1. 在默认频道展示10条文章信息
-
 2. 可以切换频道查看不同种类文章
-
 3. 当用户==下拉==可以加载最新的文章（分页）本页文章列表中发布时间为最大的时间为依据
 4. 当用户==上拉==可以加载更多的文章信息（按照发布时间）本页文章列表中发布时间最小的时间为依据
-
 5. 如果是当前频道的首页，前端传递默认参数：
 
    `maxBehotTime`:0（毫秒）
@@ -760,8 +665,6 @@ CREATE TABLE `ap_article` (
    `minBehotTime`: 20000000000000（毫秒）2063年
 
 首页默认加载小于2063年的数据
-
-
 
 #### 接口定义
 
@@ -786,8 +689,6 @@ spring:
         file-extension: yml
 ```
 
-
-
 - 需要在nacos中添加对应的配置
 
 ```yaml
@@ -807,23 +708,12 @@ mybatis-plus:
 ![](images/image-20231208162601041.png)
 
 - 定义接口
-
-
-
 - 编写mapper文件
 
 文章表与文章配置表多表查询
 
-
-
 - 编写业务层代码
-
-
-
 - 编写控制器代码
-
-
-
 - swagger测试或前后端联调测试
 
 首页要在app网关的nacos配置中心添加文章微服务的路由：
@@ -841,8 +731,6 @@ mybatis-plus:
 
 启动网关、user、article微服务
 
-
-
 ### 文章详情-实现方案分析
 
 #### 方案1
@@ -851,11 +739,9 @@ mybatis-plus:
 
 ![](images/image-20231208175801032.png)
 
-#### 方案2-静态模板展示 
+#### 方案2-静态模板展示
 
 ![](images/image-20231208175735636.png)
-
-
 
 ### freemarker
 
@@ -865,7 +751,7 @@ mybatis-plus:
 
 [FreeMarker](https://github.com/apache/freemarker) 是一款 模板引擎： 即一种基于模板和要改变的数据， 并用来生成输出文本(==HTML网页，电子邮件，配置文件，源代码==等)的通用工具。 它**==不是面向最终用户的==**，而是一个Java类库，是一款程序员可以嵌入他们所开发产品的组件。
 
-模板编写为FreeMarker Template Language (FTL)。它是简单的，专用的语言， *不是* 像PHP那样成熟的编程语言。 那就意味着要准备数据在真实编程语言中来显示，比如数据库查询和业务运算， 之后模板显示已经准备好的数据。在模板中，你可以专注于如何展现数据， 而在模板之外可以专注于要展示什么数据。 
+模板编写为FreeMarker Template Language (FTL)。它是简单的，专用的语言， *不是* 像PHP那样成熟的编程语言。 那就意味着要准备数据在真实编程语言中来显示，比如数据库查询和业务运算， 之后模板显示已经准备好的数据。在模板中，你可以专注于如何展现数据， 而在模板之外可以专注于要展示什么数据。
 
 #### 技术选型对比
 
@@ -874,10 +760,8 @@ mybatis-plus:
 Jsp、Freemarker、Thymeleaf 、Velocity 等。
 
 1. Jsp 为 Servlet 专用，不能单独进行使用。
-
 2. Thymeleaf 为新技术，功能较为强大，但是执行的效率比较低。
-
-3. Velocity从2010年更新完 2.0 版本后，便没有在更新。Spring Boot 官方在 1.4 版本后对此也不在支持，虽然 Velocity 在 2017 年版本得到迭代，但为时已晚。 
+3. Velocity从2010年更新完 2.0 版本后，便没有在更新。Spring Boot 官方在 1.4 版本后对此也不在支持，虽然 Velocity 在 2017 年版本得到迭代，但为时已晚。
 
 #### 环境搭建-快速入门
 
@@ -933,7 +817,7 @@ spring:
 - 创建模型类
 - 创建模板
 
-在resources下创建`templates`，此目录为freemarker的默认模板存放目录。
+在resources下创建 `templates`，此目录为freemarker的默认模板存放目录。
 
 在templates下创建模板文件 01-basic.ftl，模板中的==插值表达式==最终会被freemarker替换成具体的数据。
 
@@ -957,24 +841,18 @@ Hello ${name} <br>
 ```
 
 - 创建controller
-
 - 创建启动类
-
 - 测试
 
 http://localhost:8881/basic
 
 ![](images/image-20231208182656467.png)
 
-
-
 freemarker模板文件通常都是以ftl作为扩展名，也可以为html、xml、jsp等
 
 `FreeMarkerAutoConfiguration`
 
 `FreeMarkerProperties`
-
-
 
 #### Freemarker指令语法
 
@@ -1007,8 +885,6 @@ Hello ${name}
 我是一个普通的文本
 ```
 
-
-
 ##### 集合指令（List和Map）
 
 ```html
@@ -1028,7 +904,7 @@ List:
     </#list>
 ```
 
-`${k_index}`得到循环的下表，从0开始，是stu加上`_index`。
+`${k_index}`得到循环的下表，从0开始，是stu加上 `_index`。
 
 获取map中的值：
 
@@ -1050,8 +926,6 @@ map.keyname.property
     </#list>
 ```
 
-
-
 ##### if指令
 
 ```html
@@ -1059,8 +933,6 @@ map.keyname.property
 <#else>
 </#if>
 ```
-
-
 
 ```html
 <table>
@@ -1089,8 +961,6 @@ map.keyname.property
 </table>
 ```
 
-
-
 ##### 运算符
 
 - 算数运算符
@@ -1113,8 +983,6 @@ map.keyname.property
 
 ![](images/image-20231208190638809.png)
 
-
-
 - 逻辑运算符
 
 ```html
@@ -1132,8 +1000,6 @@ map.keyname.property
 <hr>
 ```
 
-
-
 ##### 空值处理
 
 - 判断某变量是否存在使用 “`??`”
@@ -1149,24 +1015,20 @@ map.keyname.property
 
 如果是嵌套对象则建议使用（）括起来，例： `${(stu.bestFriend.name)!''}`表示，如果stu或bestFriend或name为空默认显示空字符串。
 
-
-
 ##### 内建函数
 
-内建函数语法格式： `变量+?+函数名称` 
+内建函数语法格式： `变量+?+函数名称`
 
 - 集合的大小
 
   `${集合名?size}`
-
 - 日期格式化
 
   显示年月日: `${today?date}`
   显示时分秒：`${today?time}`
   显示日期+时间：`${today?datetime}`
   自定义格式化：  `${today?string("yyyy年MM月")}`
-
-- 内建函数`c`
+- 内建函数 `c`
 
   ```java
   model.addAttribute("point", 102920122);
@@ -1177,7 +1039,6 @@ map.keyname.property
   如果不想显示为每三位分隔的数字，可以使用c函数将数字型转成字符串输出
 
   `${point?c}`
-
 - 将json字符串转成对象
 
  assign标签，assign的作用是定义一个变量
@@ -1204,9 +1065,7 @@ template.process(getData(), new FileWriter("/Users/andyron/Downloads/list.html")
 
 ```
 
-
-
-### 对象存储服务MinIO 
+### 对象存储服务MinIO
 
 分布式文件系统
 
@@ -1223,7 +1082,6 @@ template.process(getData(), new FileWriter("/Users/andyron/Downloads/list.html")
 [MinIO](https://github.com/minio/minio)基于Apache License v2.0开源协议的对象存储服务，可以做为云存储的解决方案用来保存海量的图片，视频，文档。
 
 - Golang实现，配置简单，单行命令可以运行起来。
-
 - MinIO兼容亚马逊S3云存储服务接口（之后不想自己维护了，可以直接将其部署到云上），非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。
 
 **S3 （ Simple Storage Service简单存储服务）**  一种云标准
@@ -1236,41 +1094,32 @@ MinIO基本概念
 
 官网文档：http://docs.minio.org.cn/docs/
 
-MinIO特点： 
+MinIO特点：
 
 - 数据保护
 
   Minio使用Minio Erasure Code（纠删码）来防止硬件故障。即便损坏一半以上的driver，但是仍然可以从中恢复。
-
 - 高性能
 
   作为高性能对象存储，在标准硬件条件下它能达到55GB/s的读、35GB/s的写速率
-
 - 可扩容
 
   不同MinIO集群可以组成联邦，并形成一个全局的命名空间，并跨越多个数据中心
-
 - SDK支持
 
   基于Minio轻量的特点，它得到类似Java、Python或Go等语言的sdk支持
-
 - 有操作页面
 
   面向用户友好的简单操作界面，非常方便的管理Bucket及里面的文件资源
-
 - 功能简单
 
   这一设计原则让MinIO不容易出错、更快启动
-
 - 丰富的API
 
   支持文件资源的分享连接及分享链接的过期策略、存储桶操作、文件列表访问及文件上传下载的基本功能等。
-
 - 文件变化主动通知
 
   存储桶（Bucket）如果发生改变,比如上传对象和删除对象，可以使用存储桶事件通知机制进行监控，并通过以下方式发布出去:AMQP、MQTT、Elasticsearch、Redis、NATS、MySQL、Kafka、Webhooks等。
-
-
 
 #### MinIO安装
 
@@ -1316,10 +1165,6 @@ Warning: The standard parity is set to 0. This can lead to data loss.
 >
 > 访问本地9000端口即可 http://192.168.0.102:9000
 
-
-
-
-
 #### minio快速入门
 
 创建模块minio-demo
@@ -1355,8 +1200,6 @@ Warning: The standard parity is set to 0. This can lead to data loss.
 
 http://192.168.0.102:9000/leadnews/list.html
 
-
-
 #### 封装MinIO为starter
 
 为什么需要封装MinIO为starter？
@@ -1365,16 +1208,12 @@ http://192.168.0.102:9000/leadnews/list.html
 
 > [p39 2:30](https://www.bilibili.com/video/BV1Qs4y1v7x4?p=39&vd_source=634715056d593def3fe15c44fd54e180)  当需要拷贝目录到项目中变成模块，怎么操作 ❤️
 
-
-
 - 建立两个模块
 
 ```
 leadnews-basic
 		file-starter
 ```
-
-
 
 ```xml
 				<dependency>
@@ -1401,14 +1240,10 @@ leadnews-basic
         </dependency>
 ```
 
-
-
 ```
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.file.service.impl.MinIOFileStorageService
 ```
-
-
 
 ##### 测试封装的starter
 
@@ -1422,7 +1257,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
         </dependency>
 ```
 
-- 创建配置文件，配置属性与自定义的`MinIOConfigProperties`一致
+- 创建配置文件，配置属性与自定义的 `MinIOConfigProperties`一致
 
 ```yaml
 minio:
@@ -1432,8 +1267,6 @@ minio:
   endpoint: http://192.168.0.102:9000
   readPath: http://192.168.0.102:9000
 ```
-
-
 
 - 测试，注入`FileStorageService`使用：
 
@@ -1454,11 +1287,7 @@ public class MinIOTest {
 }
 ```
 
-上传文件到MinIO，并返回了访问地址 http://192.168.0.102:9000/leadnews/2023/12/08/list.html 
-
-
-
-
+上传文件到MinIO，并返回了访问地址 http://192.168.0.102:9000/leadnews/2023/12/08/list.html
 
 ### 文章详情
 
@@ -1489,18 +1318,8 @@ minio:
   readPath: http://192.168.0.102:9000
 ```
 
-
-
-
-
 2. 创建模板文件（article.ftl）
-
-
-
 3. 创建index.js和index.css文件，手动上传到MinIO职工
-
-
-
 4. 在artile微服务中新增测试类（后期新增文章的时候创建详情静态页，目前暂时手动生成）
 
 ```java
@@ -1529,33 +1348,29 @@ minio:
         }
 ```
 
-
-
-
-
-🔖 生成html中一些参数没有 
+🔖 生成html中一些参数没有
 
 > 自媒体环境
 >
-> ​	后台环境
+>     后台环境
 >
-> ​	前台环境
+>     前台环境
 >
 > 素材管理
 >
-> ​	minIO的图片上传
+>     minIO的图片上传
 >
-> ​	微服务中获取用户的方式
+>     微服务中获取用户的方式
 >
-> ​	拦截器的使用
+>     拦截器的使用
 >
 > 文章管理
 >
-> ​	多条件查询
+>     多条件查询
 >
-> ​	复杂业务的处理（文章发布）
+>     复杂业务的处理（文章发布）
 >
-> ​	jdk8中的新特性
+>     jdk8中的新特性
 
 ## 3 自媒体文章发布
 
@@ -1598,10 +1413,6 @@ mybatis-plus:
 
 ```
 
-
-
-
-
 3. leandnews-wemedia-gateway模块
 
 添加对应nacos配置
@@ -1629,22 +1440,18 @@ spring:
             - StripPrefix= 1
 ```
 
-
-
 #### 前台搭建
 
 通过nginx的虚拟主机功能，使用同一个nginx访问多个项目
 
 ![](images/image-20231209211900862.png)
 
-
-
 - 自媒体前端：wemedia-web
 - 在nginx中配置leadnews.conf目录中新增leadnews-wemedia.conf文件
 
 ```nginx
 upstream  leadnews-wemedia-gateway {
-    server localhost:51602;    
+    server localhost:51602;  
 }
 
 server {
@@ -1653,7 +1460,7 @@ server {
         root /Users/andyron/myfield/git/ARLeadnews/wemedia-web/;
         index index.html;
     }
-    
+  
     location ~/wemedia/MEDIA/(.*) {
         proxy_pass http://leadnews-wemedia-gateway/$1;
         proxy_set_header HOST $host;  # 不改变源请求头的值
@@ -1668,12 +1475,9 @@ server {
 `nginx -s reload`
 
 - 启动nginx，启动自媒体微服务和对应网关
-
 - 联调测试登录功能
 
 http://localhost:8802/
-
-
 
 ### 自媒体素材管理
 
@@ -1701,7 +1505,7 @@ CREATE TABLE `wm_news_material` (
 
 1. token中解析用户id，存入header。
 
-在自媒体网关中的`AuthorizeFilter`添加：
+在自媒体网关中的 `AuthorizeFilter`添加：
 
 ```java
             // 获取用户信息，之前token中存储的就是id
@@ -1727,11 +1531,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 }
 ```
 
-
-
 ##### 接口定义
 
-|          | **说明**                        |
+|          | **说明**                  |
 | -------- | ------------------------------- |
 | 接口路径 | /api/v1/material/upload_picture |
 | 请求方式 | POST                            |
@@ -1744,12 +1546,7 @@ ResponseResult  ：
 
 成功需要回显图片，返回素材对象
 
-
-
-
-
 - 导入自定义的file-starter，引入minio
-
 - 在nacos中的自媒体微服务添加备注：
 
 ```yaml
@@ -1761,17 +1558,13 @@ minio:
   readPath: http://192.168.0.102:9000
 ```
 
-
-
 > ==注意==：nacos中服务名不要搞错（`_`,`-`）
-
-
 
 #### 素材列表查询
 
 ##### 接口定义
 
-|          | **说明**              |
+|          | **说明**        |
 | -------- | --------------------- |
 | 接口路径 | /api/v1/material/list |
 | 请求方式 | POST                  |
@@ -1804,8 +1597,6 @@ ResponseResult  :
 
 ##### 实现
 
-
-
 在自媒体启动类中添加mybatis-plus的分页拦截器
 
 ```java
@@ -1817,17 +1608,11 @@ ResponseResult  :
     }
 ```
 
-
-
 > 📢注意：先要登录，要不然会出现NullPointerException，因为WmThreadLocalUtil中没有存储用户信息
-
-
 
 ### 自媒体文章管理
 
 #### 查询所有频道
-
-
 
 #### 查询自媒体文章
 
@@ -1852,15 +1637,11 @@ CREATE TABLE `wm_news` (
 ) ENGINE=InnoDB AUTO_INCREMENT=6232 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='自媒体图文内容信息表';
 ```
 
-
-
 #### 文章发布
 
 ##### 需求分析
 
 ![](images/image-20231211095937950.png)
-
-
 
 ![](images/image-20231211100127259.png)
 
@@ -1878,25 +1659,25 @@ CREATE TABLE `wm_news` (
 
 3.如果不包含id,则为新增
 
-​	3.1 执行新增文章的操作
-
-​	3.2 关联文章内容图片与素材的关系
-
-​	3.3 关联文章封面图片与素材的关系
+    3.1 执行新增文章的操作
+    
+    3.2 关联文章内容图片与素材的关系
+    
+    3.3 关联文章封面图片与素材的关系
 
 4.如果包含了id，则为修改请求
 
-​	4.1 删除该文章与素材的所有关系
-
-​	4.2 执行修改操作
-
-​	4.3 关联文章内容图片与素材的关系
-
-​	4.4 关联文章封面图片与素材的关系
+    4.1 删除该文章与素材的所有关系
+    
+    4.2 执行修改操作
+    
+    4.3 关联文章内容图片与素材的关系
+    
+    4.4 关联文章封面图片与素材的关系
 
 ##### 接口定义
 
-|          | **说明**               |
+|          | **说明**         |
 | -------- | ---------------------- |
 | 接口路径 | /api/v1/channel/submit |
 | 请求方式 | POST                   |
@@ -1907,21 +1688,13 @@ CREATE TABLE `wm_news` (
 
 ##### 实现
 
-
-
-
-
 🔖  发布文章 内容标签不能为或超过20字符
-
-
 
 ## 4 自媒体文章-自动审核
 
 文章数据流：
 
 ![文章数据流](images/image-20231211110741292.png)
-
-
 
 审核涉及的内容：
 
@@ -1931,25 +1704,18 @@ CREATE TABLE `wm_news` (
 - feign远程接口
 - 熔断降级
 
-
-
 ### 4.1 自媒体文章自动审核流程
 
 审核方式：
 
 - 自动审核
   文章发布之后，系统自动审核，主要是通过第三方接口对文章内容进行审核（成功、失败、不确定）。
-
 - 人工审核
   待自动审核返回==不确定==信息时，转到人工审核，由平台管理员进行审核。
-
-
 
 审核流程-多端调用：
 
 ![](images/image-20231212131456329.png)
-
-
 
 ### 4.2 内容安全第三方接口
 
@@ -1959,7 +1725,7 @@ CREATE TABLE `wm_news` (
 
 目前很多平台都支持内容检测，如阿里云、腾讯云、百度AI、网易云等国内大型互联网公司都对外提供了API。
 按照性能和收费来看，黑马头条项目使用的就是阿里云的内容安全接口，使用到了图片和文本的审核。
-阿里云收费标准：https://www.aliyun.com/price/product/?spm=a2c4g.11186623.2.10.4146401eg5oeu8#/lvwang/detail 
+阿里云收费标准：https://www.aliyun.com/price/product/?spm=a2c4g.11186623.2.10.4146401eg5oeu8#/lvwang/detail
 
 #### 准备工作
 
@@ -1967,15 +1733,15 @@ CREATE TABLE `wm_news` (
 
 #### 文本内容审核接口
 
-文本垃圾内容检测：https://help.aliyun.com/document_detail/70439.html?spm=a2c4g.11186623.6.659.35ac3db3l0wV5k 
+文本垃圾内容检测：https://help.aliyun.com/document_detail/70439.html?spm=a2c4g.11186623.6.659.35ac3db3l0wV5k
 
-文本垃圾内容Java SDK: https://help.aliyun.com/document_detail/53427.html?spm=a2c4g.11186623.6.717.466d7544QbU8Lr 
+文本垃圾内容Java SDK: https://help.aliyun.com/document_detail/53427.html?spm=a2c4g.11186623.6.717.466d7544QbU8Lr
 
 #### 图片审核接口
 
-图片垃圾内容检测：https://help.aliyun.com/document_detail/70292.html?spm=a2c4g.11186623.6.616.5d7d1e7f9vDRz4 
+图片垃圾内容检测：https://help.aliyun.com/document_detail/70292.html?spm=a2c4g.11186623.6.616.5d7d1e7f9vDRz4
 
-图片垃圾内容Java SDK: https://help.aliyun.com/document_detail/53424.html?spm=a2c4g.11186623.6.715.c8f69b12ey35j4 
+图片垃圾内容Java SDK: https://help.aliyun.com/document_detail/53424.html?spm=a2c4g.11186623.6.715.c8f69b12ey35j4
 
 #### 项目集成
 
@@ -1993,8 +1759,6 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.common.aliyun.GreenTextScan
 ```
 
-
-
 2. 在leadnews-wemedia的nacos配置中心阿里云【内容安全】添加配置：
 
 ```yaml
@@ -2006,8 +1770,6 @@ aliyun:
 ```
 
 3. 在自媒体微服务中测试类中注入审核文本和图片的bean进行测试
-
-
 
 ### 4.3 app端文章保存接口
 
@@ -2025,11 +1787,11 @@ aliyun:
 
 ##### 分布式id-技术选型
 
-| **方案**      | **优势**                                    | **劣势**                                                     |
-| ------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| redis         | （INCR）生成一个全局连续递增 的数字类型主键 | 增加了一个外部组件的依赖，Redis不可用，则整个数据库将无法在插入 |
-| UUID          | 全局唯一，Mysql也有UUID实现                 | 36个字符组成，占用空间大                                     |
-| snowflake算法 | 全局唯一 ，数字类型，存储成本低             | 机器规模大于1024台无法支持                                   |
+| **方案** | **优势**                              | **劣势**                                                  |
+| -------------- | ------------------------------------------- | --------------------------------------------------------------- |
+| redis          | （INCR）生成一个全局连续递增 的数字类型主键 | 增加了一个外部组件的依赖，Redis不可用，则整个数据库将无法在插入 |
+| UUID           | 全局唯一，Mysql也有UUID实现                 | 36个字符组成，占用空间大                                        |
+| snowflake算法  | 全局唯一 ，数字类型，存储成本低             | 机器规模大于1024台无法支持                                      |
 
 雪花算法（snowflake）是Twitter开源的分布式ID生成算法，结果是一个long型的ID。其核心思想是：使用41bit作为毫秒数，10bit作为机器的ID（5个bit是数据中心，5个bit的机器ID；可以理解为32个机房，每个机房最多32台机器），12bit作为毫秒内的流水号（意味着每个节点在每毫秒可以产生 4096 个 ID），最后还有一个符号位（第一个），永远是0。
 
@@ -2078,10 +1840,6 @@ workerId:机器id(取值范围：0-31)
 
 ![](images/image-20231213113733226.png)
 
-
-
-
-
 #### 保存app端文章-feign接口
 
 自媒体模块通过 远程调用实现 数据保存到文章模块
@@ -2129,8 +1887,6 @@ public interface IArticleClient {
 }
 ```
 
-
-
 2. 在leadnews-article中实现feign接口
 
 ```java
@@ -2146,9 +1902,9 @@ public class ArticleClient implements IArticleClient {
 }
 ```
 
-3. 在文章微服务中添加`ApArticleConfigMapper`。
+3. 在文章微服务中添加 `ApArticleConfigMapper`。
 
-在`ApArticleConfig`中添加构造函数，设置一些APP已发布文章默认配置：
+在 `ApArticleConfig`中添加构造函数，设置一些APP已发布文章默认配置：
 
 ```java
 @Data
@@ -2167,9 +1923,6 @@ public class ApArticleConfig implements Serializable {
 ```
 
 4. 在ApArticleService中新增方法saveArticle，并实现
-
-
-
 5. 测试
 
 POST http://localhost:51802/user/api/v1/article/save
@@ -2198,19 +1951,13 @@ status字段：0 草稿  1 待审核  2 审核失败  3 人工审核  4 人工�
 
 #### 实现
 
-在leadnews-wemedia中的service新增接口`WmNewsAutoScanService`，及其实现
-
-
-
-
-
-
+在leadnews-wemedia中的service新增接口 `WmNewsAutoScanService`，及其实现
 
 #### feign远程接口调用方式
 
 ![](images/image-20231213175037041.png)
 
-leadnews-wemedia服务需要依赖了leadnews-feign-apis工程，并且在自媒体的启动类WemediaApplication上开启feign的远程调用即可`@EnableFeignClients(basePackages = "top.andyron.apis")`：
+leadnews-wemedia服务需要依赖了leadnews-feign-apis工程，并且在自媒体的启动类WemediaApplication上开启feign的远程调用即可 `@EnableFeignClients(basePackages = "top.andyron.apis")`：
 
 ```java
 @EnableFeignClients(basePackages = "top.andyron.apis")
@@ -2225,13 +1972,9 @@ public class WemediaApplication {
 
 ```
 
-
-
 #### 单元测试
 
 创建单元测试类和方法，打断点测试
-
-
 
 #### 服务降级处理
 
@@ -2241,8 +1984,6 @@ public class WemediaApplication {
 - 服务降级虽然会导致请求失败，但是不会导致阻塞。
 
 保护文章微服务
-
-
 
 实现步骤：
 
@@ -2286,13 +2027,9 @@ public class InitConfig {
 }
 ```
 
-
-
 2. 远程接口中指向降级代码
 
 ![](images/image-20231213185722271.png)
-
-
 
 3. 在自媒体模块leadnews-wemedia的开启降级
 
@@ -2310,8 +2047,6 @@ feign:
         connectTimeout: 2000
         readTimeout: 2000
 ```
-
-
 
 4. 测试
 
@@ -2360,17 +2095,13 @@ feign:
 
         // 4 不是草稿，保存文章封面图片与素材的关系，如果当前布局是自动，需要匹配封面图片
         saveRelativeInfoForCover(dto, wmNews, materials);
-        
+      
         // 审核文章
         wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
-        
+      
         return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }
 ```
-
-
-
-
 
 3. 在自媒体启动类上添加@EnableAsync注解开启异步调用
 
@@ -2378,12 +2109,6 @@ feign:
 @EnableAsync // 开启异步调用
 public class WemediaApplication {
 ```
-
-
-
-
-
-
 
 ### 4.6 文章审核功能-综合测试
 
@@ -2399,8 +2124,6 @@ public class WemediaApplication {
 
 5，启动wemedia前端系统
 
-
-
 #### 测试情况列表
 
 1，自媒体前端发布一篇正常的文章
@@ -2415,10 +2138,6 @@ public class WemediaApplication {
 
    正常是审核失败， wm_news表中的状态是否改变，成功和失败原因正常保存
 
-
-
-
-
 ### 4.7 新需求-自管理敏感词
 
 #### 需求分析
@@ -2431,26 +2150,20 @@ public class WemediaApplication {
 
   私人侦探、针孔摄象、信用卡提现、广告代理、代开发票、刻章办、出售答案、小额贷款…
 
-
-
 需要完成的功能：
 
 需要自己维护一套敏感词，在文章审核的时候，需要验证文章是否包含这些敏感词
-
-
 
 #### 敏感词-过滤
 
 技术选型
 
-| **方案**               | **说明**                         |
+| **方案**         | **说明**                   |
 | ---------------------- | -------------------------------- |
 | 数据库模糊查询         | 效率太低                         |
 | String.indexOf("")查找 | 数据库量大的话也是比较慢         |
 | 全文检索               | 分词再匹配                       |
 | DFA算法                | 确定有穷自动机(一种==数据结构==) |
-
-
 
 #### DFA实现原理
 
@@ -2465,10 +2178,6 @@ DFA全称为：Deterministic Finite Automaton,即确定有穷自动机。
 检索的过程:
 
 ![](images/image-20231213210149385.png)
-
-
-
-
 
 #### 自管理敏感词集成到文章审核中
 
@@ -2485,12 +2194,7 @@ CREATE TABLE `wm_sensitive` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='敏感词信息表';
 ```
 
-
-
 2. 添加WmSensitiveMapper
-
-
-
 3. 在文章审核的代码中添加自管理敏感词审核
 
 ```java
@@ -2510,12 +2214,6 @@ CREATE TABLE `wm_sensitive` (
     }
 ```
 
-
-
-
-
-
-
 ### 4.8 新需求-图片识别文字审核敏感词
 
 #### 需求分析
@@ -2524,19 +2222,17 @@ CREATE TABLE `wm_sensitive` (
 
 - 文章中包含的图片要识别文字，过滤掉图片文字的敏感词
 
-
-
 #### 图片文字识别
 
 什么是OCR?
 
 OCR （Optical Character Recognition，光学字符识别）是指电子设备（例如扫描仪或数码相机）检查纸上打印的字符，通过检测暗、亮的模式确定其形状，然后用字符识别方法将形状翻译成计算机文字的过程
 
-| **方案**      | **说明**                                            |
-| ------------- | --------------------------------------------------- |
-| 百度OCR       | 收费                                                |
-| Tesseract-OCR | Google维护的开源OCR引擎，支持Java，Python等语言调用 |
-| Tess4J        | 封装了Tesseract-OCR  ，支持Java调用                 |
+| **方案** | **说明**                                      |
+| -------------- | --------------------------------------------------- |
+| 百度OCR        | 收费                                                |
+| Tesseract-OCR  | Google维护的开源OCR引擎，支持Java，Python等语言调用 |
+| Tess4J         | 封装了Tesseract-OCR  ，支持Java调用                 |
 
 Tesseract-OCR 特点：
 
@@ -2558,15 +2254,8 @@ Tesseract-OCR 特点：
 </dependency>
 ```
 
-
-
 2. 导入中文字体库， 把资料中的tessdata文件夹拷贝到自己的工作空间下。简体中文 `chi_sim.traineddata`
-
-
-
 3. 编写测试类进行测试
-
-
 
 #### 图片文字识别集成到文章审核 🔖
 
@@ -2576,8 +2265,6 @@ Tesseract-OCR 特点：
 
 在spring.factories配置中添加该类
 
-
-
 2. 在leadnews-wemedia中的配置中添加两个属性
 
 ```yaml
@@ -2586,15 +2273,7 @@ tess4j:
   language: chi_sim
 ```
 
-
-
 3. 在WmNewsAutoScanServiceImpl中的handleImageScan方法上添加如下代码
-
-
-
-
-
-
 
 ### 4.9 文章详情-静态文件生成
 
@@ -2605,10 +2284,6 @@ tess4j:
 ![](images/image-20210709110852966.png)
 
 #### 实现步骤
-
-
-
-
 
 ### 思考
 
@@ -2633,8 +2308,6 @@ tess4j:
 
 车票30min之内没有支付，当前的就取消了，这就是通过延迟任务完成。
 
-
-
 ![](images/image-20231217125316495.png)
 
 文章发布，不管是当下发布还是未来某个时间发布，都交给【延迟任务服务】，有它根据你的发布时间来决定什么时候进行审核。
@@ -2646,8 +2319,6 @@ tess4j:
 - 为了保证在可能的并发情况下，数据的准确性，采用了数据库锁机制；【集成乐观锁】
 - 在分布式下，为了解决一个服务中的一个线程去执行一个方法，采用redis实现分布式锁的方案；
 - 为了提升redis的执行效率，采用redis管道，也就是把多个redis操作合并成一个，最终达成提升性能的目的
-
-
 
 ### 5.2 延迟任务概述
 
@@ -2668,11 +2339,9 @@ tess4j:
 
 ##### DelayQueue
 
-JDK自带`DelayQueue` 是一个支持延时获取元素的阻塞队列， 内部采用优先队列 `PriorityQueue` 存储元素，同时元素必须实现 `Delayed` 接口；在创建元素时可以指定多久才可以从队列中获取当前元素，只有在延迟期满时才能从队列中提取元素。
+JDK自带 `DelayQueue` 是一个支持延时获取元素的阻塞队列， 内部采用优先队列 `PriorityQueue` 存储元素，同时元素必须实现 `Delayed` 接口；在创建元素时可以指定多久才可以从队列中获取当前元素，只有在延迟期满时才能从队列中提取元素。
 
 ![](images/image-20231217144219854.png)
-
-
 
 DelayQueue属于排序队列，它的特殊之处在于队列的元素必须实现Delayed接口，该接口需要实现compareTo和getDelay方法
 
@@ -2688,21 +2357,14 @@ compareTo方法：用于排序，确定元素出队列的顺序。
 
 3：循环的从延迟队列中拉取任务
 
-
-
 > 使用DelayQueue作为延迟任务，如果程序挂掉之后，任务都是放在内存，消息会丢失，如何保证数据不丢失？
-
-
 
 ##### RabbitMQ实现延迟任务（常用）
 
 - TTL：Time To Live (消息存活时间)
-
 - ==死信队列==：Dead Letter Exchange(死信交换机)，当消息成为Dead message后，可以重新发送另一个交换机（死信交换机）
 
 ![](images/image-20231217144506985.png)
-
-
 
 ##### redis实现（常用，本项目使用）
 
@@ -2757,7 +2419,6 @@ leadnews-schedule是一个通用的服务，单独创建模块来管理任何类
 ![](images/image-20231217172522947.png)
 
 1. 在leadnews-service下创建leadnews-schedule模块
-
 2. bootstrap.yml
 
 ```yaml
@@ -2832,7 +2493,7 @@ CREATE TABLE `taskinfo_logs` (
 
 ##### mybatis-plus集成乐观锁的使用
 
-1. 在实体类中使用`@Version`标明是一个版本的字段
+1. 在实体类中使用 `@Version`标明是一个版本的字段
 
 ```java
 		/**
@@ -2857,15 +2518,13 @@ CREATE TABLE `taskinfo_logs` (
     }
 ```
 
-
-
 #### redis实现延迟任务
 
 > docker安装redis
 >
 > ```shell
 > docker pull redis
-> 
+>
 > docker run -d --name redis --restart=always -p 6379:6379 redis --requirepass "leadnews"
 > ```
 
@@ -2907,8 +2566,6 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.common.redis.CacheService
 ```
 
-
-
 #### 添加任务
 
 1. 创建TaskinfoMapper 和TaskinfoLogsMapper
@@ -2945,16 +2602,12 @@ public class Task implements Serializable {
 }
 ```
 
-
-
 3. 创建TaskService
    - 添加任务到数据库中
    - 添加任务到redis中
      - 如果任务的执行时间小于等于当前时间存入list
      - 如果任务的执行时间大于当前时间，小于等于预设时间（未来5分钟）存入zset中
 4. 测试
-
-
 
 #### 取消任务
 
@@ -2968,8 +2621,6 @@ public class Task implements Serializable {
 #### 消费任务
 
 ![](images/image-20231228231409487.png)
-
-
 
 #### 未来数据定时刷新
 
@@ -2989,21 +2640,17 @@ public class Task implements Serializable {
 
 keys的模糊匹配功能很方便也很强大，但是在生产环境需要慎用！开发中使用keys的模糊匹配却发现redis的CPU使用率极高，所以公司的redis生产环境将keys命令禁用了！redis是单线程，会被堵塞。
 
-方案2：scan 
+方案2：scan
 
 ![](images/image-20231231021131553.png)
 
 SCAN 命令是一个基于游标的迭代器，SCAN命令每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为SCAN命令的游标参数， 以此来延续之前的迭代过程。
-
-
 
 > 数据如何同步？
 >
 > 两件事：
 > 第一：从zset中查出数据，并删除
 > 第二：把数据存入到list中
-
-
 
 普通redis客户端和服务器交互模式:
 
@@ -3060,10 +2707,6 @@ Pipeline请求模型【**==reids管道==**】:
 public class ScheduleApplication 
 ```
 
-
-
-
-
 #### 分布式锁解决集群下的方法抢占执行
 
 > 问题描述：如果启动两台leadnews-schedule服务，每台服务都会去执行refresh定时任务方法。
@@ -3072,21 +2715,15 @@ public class ScheduleApplication
 
 ![](images/image-20231228232217510.png)
 
-
-
-
-
-
-
 分布式锁：控制分布式系统有序的去对共享资源进行操作，通过互斥来保证数据的一致性。
 
 分布式锁的解决方案：
 
-| **方案**  | **说明**                          |
-| --------- | --------------------------------- |
-| 数据库    | 基于表的唯一索引                  |
-| zookeeper | 根据zookeeper中的临时有序节点排序 |
-| redis     | 使用SETNX命令完成                 |
+| **方案** | **说明**                    |
+| -------------- | --------------------------------- |
+| 数据库         | 基于表的唯一索引                  |
+| zookeeper      | 根据zookeeper中的临时有序节点排序 |
+| redis          | 使用SETNX命令完成                 |
 
 ##### redis分布式锁
 
@@ -3151,8 +2788,6 @@ public void refresh() {
 
 🔖测试
 
-
-
 #### 数据库任务定时同步到redis
 
 1. 清理缓存中的数据
@@ -3172,8 +2807,6 @@ cacheService.delete(futureKeys);
 List<Taskinfo> taskinfoList = taskinfoMapper.selectList(Wrappers.<Taskinfo>lambdaQuery().lt(Taskinfo::getExecuteTime, calendar.getTime()));
 ```
 
-
-
 3. 新增任务到redis
 
 ```java
@@ -3185,15 +2818,9 @@ for (Taskinfo taskinfo : taskinfoList) {
 }
 ```
 
-
-
 4. 测试
 
 清理掉缓存和数据库任务，添加新的几条任务，然后在删掉一两个缓存任务，重启ScheduleApplication微服务看看是否同步。
-
-
-
-
 
 > 1. 在分布式系统环境下，一个方法在同一时间只能被一个机器的一个线程执行
 > 2. 主要是通过redis的sexnx特性完成分布式锁的功能A获取到锁以后其他客户端不能操作，只能等待A释放锁以后，其他客户端才能操作
@@ -3241,9 +2868,8 @@ public interface IScheduleClient {
 在leadnews-schedule中创建上面远程接口的实现：
 
 ```
+
 ```
-
-
 
 #### 发布文章集成添加延迟队列接口（添加任务）
 
@@ -3297,23 +2923,17 @@ public class WmNewsTaskServiceImpl implements WmNewsTaskService {
     ...
 ```
 
-
-
 - 测试
 
 启动leadnews-schedule，leandnews-wemedia-gateway，leadnews-wemedia
 
 http://localhost:8802/#/login
 
-
-
 ##### 序列化工具对比
 
 `JdkSerialize`：java内置的序列化能将实现了Serilazable接口的对象进行序列化和反序列化， ObjectOutputStream的writeObject()方法可序列化对象生成字节数组
 
 `Protostuff`：google开源的protostuff采用更为紧凑的二进制数组，表现更加优异，然后使用protostuff的编译工具生成pojo类
-
-
 
 ```xml
 <dependency>
@@ -3328,8 +2948,6 @@ http://localhost:8802/#/login
   <version>1.6.0</version>
 </dependency>
 ```
-
-
 
 #### 消费任务进行审核文章（拉取任务）
 
@@ -3373,11 +2991,9 @@ http://localhost:8802/#/login
 
 🔖
 
-
-
 ## 6 kafka及异步通知文章上下架
 
-### 自媒体文章上下架
+### 6.1 自媒体文章上下架
 
 #### 需求分析
 
@@ -3387,15 +3003,15 @@ http://localhost:8802/#/login
 >
 > App端文章
 
-在自媒体微服务上下架文章，需要通知文章微服务，如果采用feign远程调用可能会产生系统耦合🔖；更好的方式是MQ，它的优势是系统解耦。
+在自媒体微服务上下架文章，需要通知文章微服务，如果采用feign远程调用可能会产生系统耦合🔖；更好的方式是MQ，它的优势是==系统解耦==。
 
 ![](images/image-20231231043137993.png)
 
-文章的点赞不喜欢或关注，也可以用到MQ。流量削峰
+文章的点赞不喜欢或关注，也可以用到MQ，用于==流量削峰==🔖：
 
+![](images/image-20240228113404756.png)
 
-
-### kafka
+### 6.2 kafka
 
 消息中间件对比：
 
@@ -3407,17 +3023,17 @@ http://localhost:8802/#/login
 | 可用性     | 高（主从）                             | 高（主从）                 | 非常高（分布式）         | 非常高（分布式）                         |
 | 功能特性   | 成熟的产品、较全的文档、各种协议支持好 | 并发能力强、性能好、延迟低 | MQ功能比较完善，扩展性佳 | 只支持主要的MQ功能，主要应用于大数据领域 |
 
-消息中间件对比-选择建议：
+消息中间件对比-选择建议：【ActiveMQ已不再推荐】
 
-| **消息中间件** | **建议**                                                     |
-| -------------- | ------------------------------------------------------------ |
-| Kafka          | 追求高吞吐量，适合产生大量数据的互联网服务的数据收集业务     |
-| RocketMQ       | 可靠性要求很高的金融互联网领域,稳定性高，经历了多次阿里双11考验 |
-| RabbitMQ       | 性能较好，社区活跃度高，数据量没有那么大，优先选择功能比较完备的RabbitMQ |
+| **消息中间件** | **建议**                                                           |
+| -------------------- | ------------------------------------------------------------------------ |
+| Kafka                | 追求高吞吐量，适合产生大量数据的互联网服务的数据收集业务                 |
+| RocketMQ             | 可靠性要求很高的金融互联网领域，稳定性高，经历了多次阿里双11考验         |
+| RabbitMQ             | 性能较好，社区活跃度高，数据量没有那么大，优先选择功能比较完备的RabbitMQ |
 
 #### kafka介绍
 
-Kafka是一个分布式流媒体平台,类似于消息队列或企业消息传递系统。kafka官网：http://kafka.apache.org/  
+Kafka是一个分布式流媒体平台,类似于消息队列或企业消息传递系统。kafka官网：http://kafka.apache.org/
 
 ![](images/image-20231214135951026.png)
 
@@ -3425,25 +3041,22 @@ Producers：消息生产者
 
 Consumers：消息消费者
 
+Kafka CLuster：kafka集群
+
 Stream Processors：消息流式处理
 
-Connectors
+Connectors：连接器，与数据库数据交互
 
 
 
-kafka名词解释
+**kafka名词解释**
 
 ![](images/image-20231214140006878.png)
 
 - producer：发布消息的对象称之为主题生产者（Kafka topic producer）
-
 - topic：Kafka将消息分门别类，每一类的消息称之为一个**主题（Topic）**
-
 - consumer：订阅消息并处理发布的消息的对象称之为主题消费者（consumers）
-
 - broker：已发布的消息保存在一组服务器中，称之为**Kafka集群**。集群中的每一个服务器都是一个代理（Broker）。 消费者可以订阅一个或多个主题（topic），并从Broker拉数据，从而消费这些已发布的消息。
-
-
 
 #### kafka安装配置
 
@@ -3455,11 +3068,9 @@ Kafka对于zookeeper是强依赖，保存kafka相关的节点数据，所以安�
 docker pull zookeeper:3.4.14
 
 # mac m1 可能遇到没有arm64的情况，添加--platform linux/x86_64
-docker pull --platform linux/x86_64 zookeeper:3.4.14
+docker pull --platform linux/arm64 zookeeper:3.4.14
 
 ```
-
-
 
 ```shell
 docker run -d --name zookeeper -p 2181:2181 zookeeper:3.4.14
@@ -3471,15 +3082,13 @@ docker run --platform linux/amd64 -d --name zookeeper -p 2181:2181 zookeeper:3.4
 WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 ```
 
-
-
 - Docker安装kafka
+
+注意kafka和zookeeper的版本对应
 
 ```shell
 docker pull wurstmeister/kafka:2.12-2.3.1
 ```
-
-
 
 ```shell
 docker run -d --name kafka \
@@ -3495,22 +3104,77 @@ docker run -d --name kafka \
 >
 > `9092`是kafka对外监听的端口
 >
-> `--net=host`，kafka直接使用容器宿主机的网络命名空间， 即没有独立的网络环境。它使用宿主机的ip和端口。也可以使用-p来做映射。
-
-
+> `--net=host`，kafka直接使用容器宿主机的网络命名空间， 即没有独立的网络环境。它使用宿主机的ip和端口。也可以使用-p来做映射（云主机就必须要使用-p了）。
 
 > 最终在阿里云服务中搭建
+>
+> 或者在mac上直接安装使用:
+>
+> - 直接下载zookeeper 3.4.14的二进制版本(apache-zookeeper-3.7.2-bin)
+>
+> ```shell
+> ➜  bin sudo ./zkServer.sh start
+> 
+> ➜  bin sudo ./zkCli.sh 
+> zk: localhost:2181(CONNECTED) 0] ls /
+> [zookeeper]
+> [zk: localhost:2181(CONNECTED) 1] 
+> ```
+>
+> - 直接下载kafka的二进制版本（kafka_2.12-2.3.1）
+>
+> ```shell
+> ./kafka-topics.sh --version
+> 2.3.1 (Commit:18a913733fb71c01)
+> ```
+>
+> 配置文件`config/server.properties`中参数
+>
+> `broker.id`：每个 Kafka 服务都需要指定一个唯一的 broker.id
+>
+> `listeners`：Kafka 监听的地址和端口号，可以指定多个，以逗号分隔。默认情况下，Kafka 监听的地址是本机 IP 地址。
+>
+> `log.dirs`：Kafka 存储消息日志的路径。
+>
+> `zookeeper.connect`：ZooKeeper 的连接地址，可以指定多个，以逗号分隔。如果安装了多个 ZooKeeper，建议指定多个连接地址，以提高可用性。
+>
+> 1️⃣启动 Kafka 服务：
+>
+> ```shell
+> ./kafka-server-start.sh config/server.properties
+> ```
+>
+> 2️⃣创建一个test主题：
+>
+> ```
+> ./kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+> ```
+>
+> 其中，--replication-factor 参数指定副本数，--partitions 参数指定分区数。在实际生产环境中，建议将副本数设置为 2 或 3，以提高可用性。
+>
+> 3️⃣生产消息：
+>
+> ```
+> ./kafka-console-producer.sh --broker-list localhost:9092 --topic test
+> ```
+>
+> 在命令行中输入消息，然后按回车键发送。
+>
+> 4️⃣接收消息
+>
+> ```
+> ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+> ```
+>
+> 其中，--from-beginning 参数表示从最早的消息开始接收。
+
+
 
 
 
 #### kafka入门
 
 ##### 入门案例
-
-
-
-- 生产者发送消息，多个消费者只能有一个消费者接收到消息
-- 生产者发送消息，多个消费者都可以接收到消息
 
 
 
@@ -3525,64 +3189,125 @@ docker run -d --name kafka \
 
 2. 生产者发送消息
 
+```java
+public class ProducerQuickStart {
+
+    public static void main(String[] args) {
+        // 1 kafka的配置信息
+        Properties properties = new Properties();
+        // kafka的连接地址
+        properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        // 发送失败，失败的重试次数
+        properties.put(ProducerConfig.RETRIES_CONFIG, 5);
+        // 消息key的序列化器
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        // 消息value的序列化器
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+
+        // 2 生产者对象
+        KafkaProducer<String,String> producer = new KafkaProducer<String, String>(properties);
+
+        // 封装发送的消息:topic，key，value
+        ProducerRecord<String,String> record = new ProducerRecord<String, String>("andyron-topic","100001","hello kafka-3");
+
+        // 3 发送消息
+        producer.send(record);
+
+        // 4 关闭消息通道，必须关闭，否则消息发送不成功
+        producer.close();
+    }
+}
+
+```
+
 
 
 3. 消费者接收消息
 
+```java
+public class ConsumerQuickStart {
+
+    public static void main(String[] args) {
+        // 1.添加kafka的配置信息
+        Properties properties = new Properties();
+        // kafka的连接地址
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        // 消费者组
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "group2");
+        // key、value的反序列化器
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+        // 2.消费者对象
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+
+        // 3.订阅主题
+        consumer.subscribe(Collections.singletonList("andyron-topic"));
+
+        // 当前线程一直处于监听状态
+        while (true) {
+            // 4.获取消息
+            ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofMillis(1000));
+            for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
+                System.out.println(consumerRecord.key());
+                System.out.println(consumerRecord.value());
+            }
+        }
+    }
+}
+```
 
 
 
+复制一份消费者
 
-生产者发送消息，多个消费者订阅同一个主题，只能有一个消费者收到消息（一对一）
+![](images/image-20240229114120981.png)
 
+1️⃣生产者发送消息，多个消费者订阅同一个主题，只能有一个消费者收到消息（一对一）
 
+![](images/image-20240229112958842.png)
 
+2️⃣生产者发送消息，多个消费者订阅同一个主题，所有消费者都能收到消息（一对多）【修改复制的消费者的组名为group2】
 
-
-生产者发送消息，多个消费者订阅同一个主题，所有消费者都能收到消息（一对多）
-
-
+![](images/image-20240229113024296.png)
 
 ##### 分区机制
 
-Kafka 中的分区机制指的是将每个主题划分成多个分区（Partition）
-可以处理更多的消息，不受单台服务器的限制，可以不受限的处理更多的数据
+![](images/image-20240229115145501.png)
+
+T表示主题，P表示分区（可以理解为不同的文件夹）
+
+- Kafka 中的分区机制指的是将每个主题划分成多个分区（Partition）【也就是可以理解为把topic存储在不同的机器里不同的文件夹下】
+- 可以处理更多的消息，不受单台服务器的限制，可以不受限的处理更多的数据
 
 
 
 ##### topic剖析
 
+![](images/image-20240229115351849.png)
+
 每一个分区都是一个顺序的、不可变的消息队列， 并且可以持续的添加。分区中的消息都被分了一个序列号，称之为==偏移量(offset)==，在每个分区中此偏移量都是唯一的。
-
-
-
-
 
 ##### 分区策略
 
-| **分区策略** | **说明**                                                     |
-| ------------ | ------------------------------------------------------------ |
-| 轮询策略     | 按顺序轮流将每条数据分配到每个分区中                         |
-| 随机策略     | 每次都随机地将消息分配到每个分区                             |
-| 按键保存策略 | 生产者发送数据的时候，可以指定一个key，计算这个key的hashCode值，按照hashCode的值对不同消息进行存储 |
+| **分区策略** | **说明**                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| 轮询策略           | 按顺序轮流将每条数据分配到每个分区中                                                               |
+| 随机策略           | 每次都随机地将消息分配到每个分区                                                                   |
+| 按键保存策略       | 生产者发送数据的时候，可以指定一个key，计算这个key的hashCode值，按照hashCode的值对不同消息进行存储 |
 
+不指定key默认就是轮询。
 
+#### kafka高可用设计🔖
 
+##### 方案一：集群
 
+![](images/image-20240229120057326.png)
 
-
-
-#### kafka高可用设计
-
-##### 集群
-
-- Kafka 的服务器端由被称为 Broker 的服务进程构成，即一个 Kafka 集群由多个 Broker 组成
-
+- Kafka 的服务器端由被称为Broker的服务进程构成，即一个Kafka集群由多个Broker组成
 - 这样如果集群中某一台机器宕机，其他机器上的 Broker 也依然能够对外提供服务。这其实就是 Kafka 提供高可用的手段之一
 
-
-
-##### 备份机制(Replication）
+##### 方案二：备份机制(Replication）
 
 ![](images/image-20231214140626267.png)
 
@@ -3591,16 +3316,13 @@ Kafka 中消息的备份又叫做 副本（Replica）
 Kafka 定义了两类副本：
 
 - 领导者副本（Leader Replica）
-
 - 追随者副本（Follower Replica）
 
-**同步方式**
+**同步方式**：
 
 ![](images/image-20231214140741381.png)
 
 ISR（in-sync replica）需要同步复制保存的follower
-
-
 
 如果leader失效后，需要选出新的leader，选举的原则如下：
 
@@ -3608,15 +3330,13 @@ ISR（in-sync replica）需要同步复制保存的follower
 
 第二：如果ISR列表中的follower都不行了，就只能从其他follower中选取
 
-
-
-极端情况，就是所有副本都失效了，这时有两种方案
+极端情况，就是所有副本都失效了，这时有两种方案：
 
 第一：等待ISR中的一个活过来，选为Leader，数据可靠，但活过来的时间不确定
 
 第二：选择第一个活过来的Replication，不一定是ISR中的，选为leader，以最快速度恢复可用性，但数据不一定完整
 
-#### kafka生产者详解 
+#### kafka生产者详解
 
 ##### 发送类型
 
@@ -3625,8 +3345,13 @@ ISR（in-sync replica）需要同步复制保存的follower
   使用send()方法发送，它会返回一个Future对象，调用get()方法进行等待，就可以知道消息是否发送成功
 
 ```java
-RecordMetadata recordMetadata = producer.send(kvProducerRecord).get();
-System.out.println(recordMetadata.offset());
+//发送消息
+try {
+  RecordMetadata recordMetadata = producer.send(record).get();
+  System.out.println(recordMetadata.offset());//获取偏移量
+} catch (Exception e){
+  e.printStackTrace();
+}
 ```
 
 - 异步发送
@@ -3650,37 +3375,66 @@ producer.send(kvProducerRecord, new Callback() {
 
 - ack
 
+| **确认机制**     | **说明**                                                     |
+| ---------------- | ------------------------------------------------------------ |
+| acks=0           | 生产者在成功写入消息之前不会等待任何来自服务器的响应,消息有丢失的风险，但是速度最快 |
+| acks=1（默认值） | 只要集群首领节点收到消息，生产者就会收到一个来自服务器的成功响应 |
+| acks=all         | 只有当所有参与赋值的节点全部收到消息时，生产者才会收到一个来自服务器的成功响应 |
+
+
+
 
 
 - retries
+
+```java
+//设置重试次数
+prop.put(ProducerConfig.RETRIES_CONFIG,10);
+```
+
+生产者从服务器收到的错误有可能是临时性错误，在这种情况下，retries参数的值决定了生产者可以重发消息的次数，如果达到这个次数，生产者会放弃重试返回错误，默认情况下，生产者会在每次重试之间等待100ms
 
 
 
 - 消息压缩
 
+默认情况下， 消息发送时不会被压缩。
+
+```java
+//消息压缩
+prop.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,"gzip");
+```
+
+| **压缩算法** | **说明**                                                     |
+| ------------ | ------------------------------------------------------------ |
+| snappy       | 占用较少的 CPU， 却能提供较好的性能和相当可观的压缩比， 如果看重性能和网络带宽，建议采用 |
+| lz4          | 占用较少的 CPU， 压缩和解压缩速度较快，压缩比也很客观        |
+| gzip         | 占用较多的 CPU，但会提供更高的压缩比，网络带宽有限，可以使用这种算法 |
+
+使用压缩可以降低网络传输开销和存储开销，而这往往是向 Kafka 发送消息的瓶颈所在。
+
 
 
 #### kafka消费者详解
 
+![](images/image-20240229141057990.png)
+
 ##### 消费者组
 
 - 消费者组（Consumer Group） ：指的就是由一个或多个消费者组成的群体
-
 - 一个发布在Topic上消息被分发给此消费者组中的一个消费者
 
   - 所有的消费者都在一个组中，那么这就变成了queue模型
-
   - 所有的消费者都在不同的组中，那么就完全变成了发布-订阅模型
-
-
 
 ##### 消息有序性
 
 应用场景：
 
 - 即时消息中的单对单聊天和群聊，保证发送方消息发送顺序与接收方的顺序一致
-
 - 充值转账两个渠道在同一个时间进行余额变更，短信通知必须要有顺序
+
+
 
 
 
@@ -3690,73 +3444,331 @@ topic分区中消息只能由消费者组中的唯一一个消费者处理，所
 
 kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可以使用kafka来追踪消息在分区的位置（偏移量）
 
-消费者会往一个叫做_consumer_offset的特殊主题发送消息，消息里包含了每个分区的偏移量。如果消费者发生崩溃或有新的消费者加入群组，就会触发再均衡
+消费者会往一个叫做`_consumer_offset`的特殊主题发送消息，消息里包含了每个分区的偏移量。如果消费者发生崩溃或有新的消费者加入群组，就会触发**再均衡**。
+
+
+
+##### 偏移量
+
+
+
+##### 偏移量提交方式
+
+提交偏移量的方式有两种，分别是
+
+- 自动提交偏移量
+
+当enable.auto.commit被设置为true，提交方式就是让消费者自动提交偏移量，每隔5秒消费者会自动把从poll()方法接收的最大偏移量提交上去。
+
+- 手动提交
+
+  当enable.auto.commit被设置为false可以有以下三种提交方式
+
+  + 提交当前偏移量（同步提交）
+  + 异步提交
+  + 同步和异步组合提交
+
+
+
+### 6.3 springboot集成kafka
 
 
 
 
 
-### springboot集成kafka
+### 6.4 自媒体文章上下架功能完成
+
+#### 需求分析
+
+**已发表且已上架**的文章可以下架
 
 
 
+**已发表且已下架**的文章可以上架
 
 
 
+#### 流程说明
 
-### 自媒体文章上下架功能完成
+![](images/image-20240229142728250.png)
+
+#### 接口定义
+
+![](images/image-20240229142832662.png)
+
+#### 消息传递article端文章上下架
+
+1. 导入kafka依赖
+
+
+
+2. 在自媒体端的nacos配置中心配置kafka的生产者
+
+
+
+3. 在自媒体端文章上下架后发送消息
+
+
+
+4. 在article端的nacos配置中心配置kafka的消费者
+
+
+
+5. 在article端编写监听，接收数据
+
+
+
+6. 修改ap_article_config表的数据
 
 
 
 ## 7 app端文章搜索
 
+今日内容预览
+
 - 文章搜索
 
   - ElasticSearch环境搭建
-
   - 索引库创建
-
   - 文章搜索多条件复合查询
-
   - 索引数据同步
-
 - 搜索历史记录
 
   - Mongodb环境搭建
-
   - 异步保存搜索历史
-
   - 查看搜索历史列表
-
   - 删除搜索历史
-
 - 联想词查询
 
   - 联想词的来源
-
   - 联想词功能实现
 
-### 搭建ElasticSearch环境
+![](images/image-20240229144615889.png)
+
+### 7.1 搭建ElasticSearch环境
+
+- 拉取ElasticSearch镜像
+
+```
+docker pull elasticsearch:7.4.0
+```
+
+- 创建ElasticSearch容器
+
+```
+docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins -e "discovery.type=single-node" elasticsearch:7.4.0
+```
+
+- 配置中文分词器 ik
+  	把资料中的elasticsearch-analysis-ik-7.4.0.zip上传到服务器上,放到对应目录（plugins）解压
+
+- 测试
+
+### 7.2 app端文章搜索
+
+#### 需求说明
+
+- 用户输入关键可搜索文章列表
+- 关键词高亮显示
+- 文章列表展示与home展示一样，当用户点击某一篇文章，可查看文章详情
+
+#### 思路分析
+
+为了加快检索的效率，在查询的时候不会直接从数据库中查询文章，需要在elasticsearch中进行高速检索。
+
+![](images/image-20240229150810447.png)
+
+#### 创建索引和映射
+
+搜索结果页面展示什么内容?
+
+标题
+布局
+封面图片
+发布时间
+作者名称
+文章id
+作者id
+静态url
+
+哪些需要索引和分词？
+
+标题
+内容
+
+
+
+#### 使用postman添加映射和查询
 
 
 
 
 
-### app端文章搜索
+#### 数据初始化到索引库
 
 
 
-### app端搜索-搜索记录
+#### 搜索接口定义
+
+![](images/image-20240229151152770.png)
 
 
 
-### app端搜索-关键字联想词
+#### 实现
+
+
+
+
+
+### 7.3 新增文章创建索引
+
+#### 思路分析
+
+![](images/image-20240229151519511.png)
+
+#### 实现步骤
+
+1.文章审核成功使用kafka发送消息
+
+
+
+2.搜索微服务接收消息，添加数据到索引库
+
+
+
+
+
+### 7.4 app端搜索-搜索记录
+
+#### 需求说明
+
+- 展示用户的搜索记录10条，按照搜索关键词的时间倒序
+- 可以删除搜索记录
+- 保存历史记录，保存10条，多余的则删除最久的历史记录
+
+![](images/image-20240229151659579.png)
+
+#### 数据存储说明
+
+用户的搜索记录，需要给每一个用户都保存一份，数据量较大，要求加载速度快，通常这样的数据存储到mongodb更合适，不建议直接存储到关系型数据库中。
+
+
+
+#### MongoDB安装及集成
+
+拉取镜像
+
+```
+docker pull mongo
+```
+
+创建容器
+
+```
+docker run -di --name mongo-service --restart=always -p 27017:27017 -v ~/data/mongodata:/data mongo
+```
+
+
+
+在leadnews-test模块中新建mongo-demo模块用于mongo学习
+
+```
+
+```
+
+
+
+
+
+核心方法：
+
+
+
+
+
+#### 保存搜索记录-实现思路
+
+![](images/image-20240229152130494.png)
+
+用户输入关键字进行搜索的异步记录关键字
+
+
+
+用户搜索记录对应的集合，对应实体类：`ApUserSearch` 
+
+![](images/image-20240229152304375.png)
+
+#### 保存搜索记录-实现步骤
+
+
+
+
+
+#### 加载搜索历史
+
+按照当前用户，按照时间倒序查询  `/api/v1/history/load`  POST
+
+```java
+List<ApUserSearch> userSearchList = mongoTemplate.find(Query.query(Criteria.where("userId").is(userId))               .with(Sort.by(Sort.Direction.DESC, "createdTime")), ApUserSearch.class);
+```
+
+
+
+#### 删除搜索历史
+
+按照搜索历史id删除。`/api/v1/history/del` POST `HistorySearchDto`
+
+```java
+// 删除
+Query query = Query.query(Criteria.where("userId").is(user.getId()).and("id").is(historySearchDto.getId()));
+mongoTemplate.remove(query, ApUserSearch.class);
+
+```
+
+
+
+### 7.5 app端搜索-关键字联想词
+
+#### 需求分析
+
+根据用户输入的关键字展示联想词
+
+![](images/image-20240229152834382.png)
+
+`ApAssociateWords` 
+
+#### 搜索词-数据来源
+
+通常是网上搜索频率比较高的一些词，通常在企业中有两部分来源：
+
+- 第一：自己维护搜索词
+  通过分析用户搜索频率较高的词，按照排名作为搜索词
+
+- 第二：第三方获取
+  关键词规划师（百度）、5118、爱站网
+
+
+
+导入资料中的ap_associate_words.js脚本到mongo中
+
+#### 接口定义
+
+`/api/v1/associate/search`  POST  `UserSearchDto`
+
+```java
+//3 执行查询 模糊查询
+Query query = Query.query(Criteria.where("associateWords").regex(".*?\\" + userSearchDto.getSearchWords() + ".*"));
+query.limit(userSearchDto.getPageSize());
+List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.class);
+```
 
 
 
 
 
 ## 8 平台管理
+
+
 
 
 
@@ -3778,8 +3790,6 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 当前登录后的用户可以关注作者，也可以取消关注作者
 
-
-
 一个用户关注了作者，作者是由用户实名认证以后开通的作者权限，才有了作者信息，作者肯定是app中的一个用户。
 
 从用户的角度出发：一个用户可以关注其他多个作者 —— 我的关注
@@ -3788,11 +3798,7 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 ![image-20210727163038634](../../../../../Volumes/FX-SSD-PS2000/myfield/开发资料/02项目资料/黑马头条/day09-用户/需求说明/用户行为-需求.assets\image-20210727163038634.png)
 
-
-
 ### 3 点赞或取消点赞
-
-
 
 ### 4 阅读
 
@@ -3804,11 +3810,7 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 一旦用户点击了不喜欢，不再给当前用户推荐这一类型的文章信息
 
-
-
 ### 6 收藏
-
-
 
 记录当前登录人收藏的文章
 
@@ -3818,8 +3820,6 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 例：如果当前用户点赞了该文章，点赞按钮进行高亮，其他功能类似。
 
-
-
 ### 8 注意：
 
 - 所有的行为数据，都存储到redis中
@@ -3827,11 +3827,9 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 - 关注需要在heima-leadnews-user微服务中实现
 - 收藏与文章详情数据回显在heima-leadnews-article微服务中实现
 
+## 10 热点文章-定时计算
 
-
-## 10 xxl-Job分布式任务调度
-
-### 内容
+### 今日内容
 
 #### 需求分析
 
@@ -3840,7 +3838,6 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 - 问题1：
 
   如何访问量较大，直接查询数据库，压力较大
-
 - 问题2：
 
   新发布的文章会展示在前面，并不是热点文章
@@ -3849,21 +3846,19 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 
 把热点数据存入redis进行展示
 
-判断文章是否是热点，有几项标准： 点赞数量，评论数量，阅读数量，收藏数量
+判断文章是否是热点，有几项标准： **点赞数量，评论数量，阅读数量，收藏数量**
 
 计算文章热度，有两种方案：
 
 - 定时计算文章热度
 - 实时计算文章热度
 
-### 定时计算
+#### 定时计算
 
 ![](images/image-20210729225206299.png)
 
 - 根据文章的行为（点赞、评论、阅读、收藏）计算文章的分值，利用定时任务每天完成一次计算
-
 - 把分值较大的文章数据存入到redis中
-
 - App端用户查询文章列表的时候，优先从redis中查询热度较高的文章数据
 
 #### 定时任务框架-xxljob
@@ -3871,20 +3866,15 @@ kafka不会像其他JMS队列那样需要得到消费者的确认，消费者可
 spring传统的定时任务@Scheduled，但是这样存在这一些问题 ：
 
 - 做集群任务的重复执行问题
-
 - cron表达式定义在代码之中，修改不方便
-
 - 定时任务失败了，无法重试也没有统计
-
 - 如果任务量过大，不能有效的分片执行
 
 解决这些问题的方案为：
 
-xxl-job 分布式任务调度框架
+**xxl-job分布式任务调度框架**
 
-
-
-### 分布式任务调度
+### 分布式任务调度🔖
 
 #### 什么是分布式任务调度
 
@@ -3929,8 +3919,7 @@ xxl-job 分布式任务调度框架
 
 3）Elastic-job：当当网借鉴TBSchedule并基于quartz 二次开发的弹性分布式任务调度系统，功能丰富强大，采用zookeeper实现分布式协调，具有任务高可用以及分片功能。
 
-4）Saturn： 唯品会开源的一个分布式任务调度平台，基于Elastic-job，可以全域统一配置，统一监
-控，具有任务高可用以及分片功能。 
+4）Saturn： 唯品会开源的一个分布式任务调度平台，基于Elastic-job，可以全域统一配置，统一监控，具有任务高可用以及分片功能。
 
 XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅速、学习简单、轻量级、易扩展。现已开放源代码并接入多家公司线上产品线，开箱即用。
 
@@ -3961,24 +3950,34 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
   支持设置任务失败邮件告警，预留接口支持短信、钉钉告警；
   支持实时查看任务执行运行数据统计图表、任务进度监控数据、任务完整执行日志；
 
-
-
 #### XXL-Job-环境搭建
 
-##### 2.3.1 调度中心环境要求
+##### 调度中心环境要求
 
 - Maven3+
 - Jdk1.8+
 - Mysql5.7+
 
-##### 2.3.2 源码仓库地址
+##### 源码仓库地址
 
-| 源码仓库地址                         | Release Download                                          |
-| :----------------------------------- | :-------------------------------------------------------- |
+| 源码仓库地址                         | Release Download                                       |
+| :----------------------------------- | :----------------------------------------------------- |
 | https://github.com/xuxueli/xxl-job   | [Download](https://github.com/xuxueli/xxl-job/releases)   |
 | http://gitee.com/xuxueli0323/xxl-job | [Download](http://gitee.com/xuxueli0323/xxl-job/releases) |
 
 也可以使用资料文件夹中的源码
+
+
+
+#### XXL-Job源码说明
+
+![](images/image-20240229154629784.png)
+
+#### 配置部署调度中心
+
+
+
+
 
 ##### 2.3.3 初始化“调度数据库”
 
@@ -4082,25 +4081,11 @@ xxl.job.triggerpool.slow.max=100
 xxl.job.logretentiondays=30
 ```
 
-
-
 启动调度中心，默认登录账号 “admin/123456”, 登录后运行界面如下图所示。
-
-
 
 #### 配置部署调度中心-docker安装
 
-
-
-
-
 //....🔖
-
-
-
-
-
-
 
 ### 热点文章-定时计算
 
@@ -4108,15 +4093,47 @@ xxl.job.logretentiondays=30
 
 需求：为每个频道缓存热度较高的30条文章优先展示
 
-
-
 判断文章热度较高的标准是什么？
 
 文章：阅读，点赞，评论，收藏
 
+ap_article文章表
+
+![](images/image-20240229154912638.png)
+
+#### 实现
+
+1.查询前5天的文章
+
+
+
+2.计算文章分值
+
+
+
+3.为每个频道缓存30条分值较高的文章
+
+
+
+4.定时任务
+
+
+
+
+
 
 
 ### 查询文章接口改造
+
+#### 思路分析
+
+![](images/image-20240229155143398.png)
+
+#### 实现
+
+
+
+
 
 
 
@@ -4127,14 +4144,9 @@ xxl.job.logretentiondays=30
 kafkaStream
 
 - 什么是流式计算
-
 - kafkaStream概述
-
 - kafkaStream入门案例
-
 - Springboot集成kafkaStream
-
-
 
 实时计算
 
@@ -4143,9 +4155,17 @@ kafkaStream
 - 更新文章行为数量
 - 替换热点文章数据
 
+定时计算与实时计算
+
+![](images/image-20240229163932210.png)
+
+
+
 
 
 ### 实时流式计算
+
+
 
 #### 概念
 
@@ -4160,15 +4180,12 @@ kafkaStream
 - 日志分析
 
   网站的用户访问日志进行实时的分析，计算访问量，用户画像，留存率等等，实时的进行数据分析，帮助企业进行决策
-
 - 大屏看板统计
 
   可以实时的查看网站注册数量，订单数量，购买数量，金额等。
-
 - 公交实时数据
 
   可以随时更新公交车方位，计算多久到达站牌等
-
 - 实时文章分值计算
 
   头条类文章的分值计算，通过用户的行为实时文章的分值，分值越高就越被推荐。
@@ -4176,16 +4193,14 @@ kafkaStream
 #### 技术方案选型
 
 - Hadoop
-
 - Apche Storm
 
   Storm 是一个分布式实时大数据处理系统，可以帮助我们方便地处理海量数据，具有高可靠、高容错、高扩展的特点。是流式框架，有很高的数据吞吐能力。
-
-- Kafka Stream 
+- Kafka Stream
 
   可以轻松地将其嵌入任何Java应用程序中，并与用户为其流应用程序所拥有的任何现有打包，部署和操作工具集成。
 
-### Kafka Stream 
+### Kafka Stream
 
 #### 概述
 
@@ -4202,15 +4217,59 @@ Kafka Stream的特点如下：
 - 支持基于事件时间的窗口操作，并且可处理晚到的数据（late arrival of records）
 - 同时提供底层的处理原语Processor（类似于Storm的spout和bolt），以及高层抽象的DSL（类似于Spark的map/group/reduce）
 
+#### Kafka Streams的关键概念
+
+- 源处理器（Source Processor）：源处理器是一个没有任何上游处理器的特殊类型的流处理器。它从一个或多个kafka主题生成输入流。通过消费这些主题的消息并将它们转发到下游处理器。
+- Sink处理器：sink处理器是一个没有下游流处理器的特殊类型的流处理器。它接收上游流处理器的消息发送到一个指定的Kafka主题。
+
+#### KStream
+
+- 数据结构类似于map
+- KStream数据流（data stream），即是一段顺序的，可以无限长，不断更新的数据集。
 
 
-### app端热点文章计算
+
+#### Kafka Stream入门案例
+
+
+
+
+
+结果：通过流式计算，会把生产者的多条消息汇总成一条发送到消费者中输出
+
+
+
+#### SpringBoot集成Kafka Stream
+
+
+
+
+
+### 热点文章-实时计算
 
 #### 思路说明
 
 ![](images/image-20210621235620854.png)
 
-#### 功能实现
+#### 实现
+
+1.修改ApLikesBehaviorServiceImpl和ApReadBehaviorServiceImpl新增发送消息
+
+
+
+2.在leadnews-article微服务中集成kafkaStream（参考kafka-demo）
+
+
+
+3.在leadnews-article微服务中实时接收消息，聚合内容
+
+
+
+4.重新计算文章的分值，更新到数据库和缓存中
+
+
+
+5.定义监听，接收聚合之后的数据，文章的分值重新进行计算
 
 
 
@@ -4219,8 +4278,6 @@ Kafka Stream的特点如下：
 
 
 ## 12 项目部署_持续集成
-
-
 
 ### 什么是持续集成
 
@@ -4236,8 +4293,6 @@ Kafka Stream的特点如下：
 
 一个持续集成服务器， Jenkins 就是一个配置简单和使用方便的持续集成服务器。
 
-
-
 持续集成的好处
 
 1、降低风险，由于持续集成不断去构建，编译和测试，可以很早期发现问题，所以修复的代价就少；
@@ -4246,10 +4301,6 @@ Kafka Stream的特点如下：
 4、持续部署，提供可部署单元包；
 5、持续交付可供使用的版本；
 6、增强团队信心；
-
-
-
-
 
 ### 软件开发模式
 
@@ -4262,19 +4313,15 @@ Kafka Stream的特点如下：
 - 需求分析
 
   这是生命周期的第一阶段，根据项目需求，团队执行一个可行性计划的分析。项目需求可能是公司内部或者客户提出的。这阶段主要是对信息的收集，也有可能是对现有项目的改善和重新做一个新的项目。还要分析项目的预算多长，可以从哪方面受益及布局，这也是项目创建的目标。
-
 - 设计
 
   第二阶段就是设计阶段，系统架构和满意状态（就是要做成什么样子，有什么功能），和创建一个项目计划。计划可以使用图表，布局设计或者文字的方式呈现。
-
 - 实现
 
   第三阶段就是实现阶段，项目经理创建和分配工作给开者，开发者根据任务和在设计阶段定义的目标进行开发代码。依据项目的大小和复杂程度，可以需要数月或更长时间才能完成。
-
 - 测试
 
   测试人员进行代码测试 ，包括功能测试、代码测试、压力测试等。
-
 - 进化
 
   最后进阶段就是对产品不断的进化改进和维护阶段，根据用户的使用情况，可能需要对某功能进行修改，bug修复，功能增加等。
@@ -4287,30 +4334,27 @@ Kafka Stream的特点如下：
 
 ![image-20210802011525024](images/image-20210802011525024.png)
 
-| 优势                                       | 劣势                                                         |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| 简单易用和理解                             | 各个阶段的划分完全固定，阶段之间产生大量的文档，极大地增加了工作量。 |
+| 优势                                       | 劣势                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| 简单易用和理解                             | 各个阶段的划分完全固定，阶段之间产生大量的文档，极大地增加了工作量。                   |
 | 当前一阶段完成后，您只需要去关注后续阶段。 | 由于开发模型是线性的，用户只有等到整个过程的末期才能见到开发成果，从而增加了开发风险。 |
-| 为项目提供了按阶段划分的检查节点           | 瀑布模型的突出缺点是不适应用户需求的变化。                   |
+| 为项目提供了按阶段划分的检查节点           | 瀑布模型的突出缺点是不适应用户需求的变化。                                             |
 
 #### 软件的敏捷开发
 
 - 什么是敏捷开发？
 
   敏捷开发（Agile Development） 的核心是迭代开发（Iterative Development） 与 增量开发（Incremental Development）。
-
 - 何为迭代开发？
 
   对于大型软件项目，传统的开发方式是采用一个大周期（比如一年）进行开发，整个过程就是一次"大开发"；迭代开发的方式则不一样，它将开发过程拆分成多个小周期，即一次"大开发"变成多次"小开发"，每次小开发都是同样的流程，所以看上去就好像重复在做同样的步骤。
 
   举例来说，SpaceX 公司想造一个大推力火箭，将人类送到火星。但是，它不是一开始就造大火箭，而是先造一个最简陋的小火箭 Falcon 1。结果，第一次发射就爆炸了，直到第四次发射，才成功进入轨道。然后，开发了中型火箭 Falcon 9，九年中发射了70次。最后，才开发 Falcon 重型火箭。如果SpaceX 不采用迭代开发，它可能直到现在还无法上天。
-
 - 何为增量开发？
 
   软件的每个版本，都会新增一个用户可以感知的完整功能。也就是说，按照新增功能来划分迭代。
 
   举例来说，房产公司开发一个10栋楼的小区。如果采用增量开发的模式，该公司第一个迭代就是交付一号楼，第二个迭代交付二号楼......每个迭代都是完成一栋完整的楼。而不是第一个迭代挖好10栋楼的地基，第二个迭代建好每栋楼的骨架，第三个迭代架设屋顶......
-
 - 敏捷开发如何迭代？
 
   虽然敏捷开发将软件开发分成多个迭代，但是也要求，每次迭代都是一个完整的软件开发周期，必须按照软件工程的方法论，进行正规的流程管理。
@@ -4322,7 +4366,6 @@ Kafka Stream的特点如下：
   - 早期交付
 
     敏捷开发的第一个好处，就是早期交付，从而大大降低成本。 还是以上一节的房产公司为例，如果按照传统的"瀑布开发模式"，先挖10栋楼的地基、再盖骨架、然后架设屋顶，每个阶段都等到前一个阶段完成后开始，可能需要两年才能一次性交付10栋楼。也就是说，如果不考虑预售，该项目必须等到两年后才能回款。 敏捷开发是六个月后交付一号楼，后面每两个月交付一栋楼。因此，半年就能回款10%，后面每个月都会有现金流，资金压力就大大减轻了。
-
   - 降低风险
 
     敏捷开发的第二个好处是，及时了解市场需求，降低产品不适用的风险。 请想一想，哪一种情况损失比较小：10栋楼都造好以后，才发现卖不出去，还是造好第一栋楼，就发现卖不出去，从而改进或停建后面9栋楼？
@@ -4333,6 +4376,8 @@ Kafka Stream的特点如下：
 
 Jenkins  是一款流行的开源持续集成（Continuous Integration）工具，广泛用于项目开发，具有自动化构建、测试和部署等功能。官网：  http://jenkins-ci.org/。
 
+![](images/image-20240229165420810.png)
+
 Jenkins的特征：
 
 - 开源的 Java语言开发持续集成工具，支持持续集成，持续部署。
@@ -4342,35 +4387,206 @@ Jenkins的特征：
 - 文件识别： Jenkins能够跟踪哪次构建生成哪些jar，哪次构建使用哪个版本的jar等。
 - 丰富的插件支持：支持扩展插件，你可以开发适合自己团队使用的工具，如 git，svn，maven，docker等。
 
+#### Jenkins安装
+
+
+
+##### 插件安装
+
+如果想让Jenkins来实现更多的功能，需要安装插件完成
+
+Maven Integration plugin： Maven 集成管理插件。
+Docker plugin： Docker集成插件。
+GitLab Plugin： GitLab集成插件。
+Publish Over SSH：远程文件发布插件。
+SSH: 远程脚本执行插件。
+
+
+
+可以在jenkins的管理界面中查看安装插件：Manage Jenkins-->Manage Plugins
+
+
+
+#### 服务器环境准备
+
+
+
+#### Jenkins工具配置
+
+在jenkins管理页面中集成环境， Manage Jenkins-->Tool Configuration ，需要指定环境的目录。
+
+
+
+
+
 
 
 ### 后端项目部署
 
-#### 4.1 多环境切换
+#### 多环境切换
 
 在项目开发部署的过程中，一般都会有三套项目环境
 
 - Development ：开发环境
-
 - Production ：生产环境
-
 - Test ：测试环境
 
 例如：开发环境的mysql连接的是本地，生产环境需要连接线上的mysql环境
 
+##### 微服务中多环境配置
+
+1.在微服务中的bootstrap.yml中新增配置
 
 
-#### 4.2 多环境切换-微服务中多环境配置
+
+2.在nacos的配置中心中新增各个环境的配置文件，例如user微服务中新增
 
 
+
+#### 整体思路
+
+目标：把AR头条的app端相关的微服务部署到192.168.200.100这台服务器上
+
+
+
+> 注意：192.168.200.100与192.168.200.130必须使用NAT这个网卡，必须在同一个网段，是可以互相通信的，可以使用ping命令来检查
+
+
+
+#### 服务集成Docker配置
+
+目标：部署的每一个微服务都是先创建docker镜像后创建对应容器启动
+
+方式一：本地微服务打包以后上传到服务器，编写Dockerfile文件完成。
+方式二：使用dockerfile-maven-plugin插件，可以直接把微服务创建为镜像使用（更省事）
+
+🔖
+
+
+
+#### 基础依赖打包配置
+
+在微服务运行之前需要在本地仓库中先去install所依赖的jar包，所以第一步应该是从git中拉取代码，并且把基础的依赖部分安装到仓库中
+
+
+
+
+
+#### 微服务打包配置
+
+所有微服务打包的方式类似，以leadnews-user微服务为例
+
+
+
+#### 部署服务到远程服务器上
+
+目标：使用jenkins（192.168.200.100）把微服务打包部署到192.168.200.130服务器上
+
+1，安装私有仓库
+
+
+
+2，jenkins中安装插件
+
+
+
+3，jenkins系统配置远程服务器链接
+
+
+
+4，jenkins项目创建与其他微服务相同
+
+
+
+5，设置参数
+
+
+
+6，构建执行Execute shell
+
+
+
+7，在远程服务器上执行脚本
+
+
+
+8.构建完成以后，可以登录130服务器，查看是否有相关的镜像和容器
+
+
+
+#### 联调测试
+
+1.参考jenkins中leadnews-user微服务把app端网关部署起来
+2.修改本地nginx中的配置反向代理地址为100这台服务器：leadnews-app.conf
+
+```nginx
+upstream  heima-app-gateway{
+  server 192.168.200.100:51601;
+}
+```
+
+3.启动nginx，打开页面进行测试
 
 
 
 ### jenkins触发器配置
 
+#### URL触发远程构建
 
 
 
+
+
+#### 其他工程构建后触发
+
+
+
+#### 定时构建
+
+
+
+##### 定时构建-定时表达式
+
+定时字符串从左往右分别为： 分 时 日 月 周
+
+| 组成部分 | 含义        | 取值范围                   |
+| -------- | ----------- | -------------------------- |
+| 第一部分 | minute (分) | 0~59                       |
+| 第二部分 | hour(小时)  | 0~23                       |
+| 第三部分 | day(天)     | 1~31                       |
+| 第四部分 | month(月)   | 1~12                       |
+| 第五部分 | week(周)    | 0~7，0 和 7 都是表示星期天 |
+
+- 每30分钟构建一次：H/30 * * * * 10:02 10:32
+- 每2个小时构建一次: H H/2 * * *
+- 每天的8点，12点，22点，一天构建3次： (多个时间点中间用逗号隔开) 0 8,12,22 * * *
+- 每天中午12点定时构建一次 H 12 * * *
+- 每天下午18点定时构建一次 H 18 * * *
+
+> 符号`H`表示一个随机数
+> 符号`*`取值范围的任意值
+
+
+
+#### 轮询
+
+轮询SCM（Poll SCM），是指定时扫描本地代码仓库的代码是否有变更，如果代码有变更就触发项目构建。
+
+
+
+Jenkins会定时扫描本地整个项目的代码，增大系统的开销，不建议使用。
+
+
+
+> 总结：
+>
+> 构建项目的方式
+>
+> 1. 手动构建（常用）
+> 2. URL触发远程构建
+> 3. 其他工程构建后触发（常用）
+> 4. 定时构建
+> 5. 轮询，扫描代码仓库查看是否变更
 
 ## 13 更多功能
 
