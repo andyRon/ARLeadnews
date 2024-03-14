@@ -3170,7 +3170,23 @@ docker run -d --name kafka \
 
 
 
-
+> 由于zookeeper 3.4.14没有arm版本，选择更加新的版本：
+>
+> ```shell
+> docker pull zookeeper:3.5.9
+> 
+> docker run -d --name zookeeper -p 2181:2181 zookeeper:3.5.9
+> 
+> docker run -d --name kafka \
+> --env KAFKA_ADVERTISED_HOST_NAME=10.211.55.5 \
+> --env KAFKA_ZOOKEEPER_CONNECT=10.211.55.5:2181 \
+> --env KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.211.55.5:9092 \
+> --env KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
+> --env KAFKA_HEAP_OPTS="-Xmx256M -Xms256M" \
+> --net=host wurstmeister/kafka
+> ```
+>
+> 
 
 #### kafka入门
 
@@ -3863,10 +3879,110 @@ docker pull elasticsearch:7.4.0
 docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins -e "discovery.type=single-node" elasticsearch:7.4.0
 ```
 
-- 配置中文分词器 ik
-  	把资料中的elasticsearch-analysis-ik-7.4.0.zip上传到服务器上,放到对应目录（plugins）解压
+- 配置中文分词器 ik  https://github.com/infinilabs/analysis-ik
 
-- 测试
+  在/usr/share/elasticsearch/plugins目录中新建analysis-ik目录，然后`elasticsearch-analysis-ik-7.4.0.zip`上传到服务器上并解压到analysis-ik目录
+
+- 分词测试。重启elasticsearch容器
+
+![](images/image-20240304100621828.png)
+
+> ```
+> # docker pull elasticsearch:7.4.0
+> 7.4.0: Pulling from library/elasticsearch
+> 7.4.0: Pulling from library/elasticsearch
+> no matching manifest for linux/arm64/v8 in the manifest list entries
+> ```
+>
+> 原因可能是es低版本没有arm64docker镜像。
+
+> 另一种选择是  elasticsearch:7.14.2
+>
+> ```shell
+> docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins -e "discovery.type=single-node" elasticsearch:7.14.2
+> ```
+>
+> post `localhost:9200/_analyze`  json
+
+
+
+> 另一种选择，在macos本地启动运行elasticsearch，测试
+> 
+> post `10.211.55.5:9200/_analyze`  json
+> 
+> ```json
+> {
+> "analyzer": "ik_max_word",
+>  "text": "欢迎来到黑马程序员学习"
+>}
+> ```
+>
+> 结果：
+>
+> ```json
+> {
+>     "tokens": [
+>         {
+>          "token": "欢迎",
+>          "start_offset": 0,
+>         "end_offset": 2,
+>          "type": "CN_WORD",
+>         "position": 0
+>      },
+>      {
+>             "token": "迎来",
+>             "start_offset": 1,
+>             "end_offset": 3,
+>             "type": "CN_WORD",
+>             "position": 1
+>         },
+>         {
+>             "token": "来到",
+>             "start_offset": 2,
+>             "end_offset": 4,
+>             "type": "CN_WORD",
+>             "position": 2
+>         },
+>         {
+>             "token": "黑马",
+>             "start_offset": 4,
+>             "end_offset": 6,
+>             "type": "CN_WORD",
+>             "position": 3
+>         },
+>         {
+>             "token": "程序员",
+>             "start_offset": 6,
+>             "end_offset": 9,
+>             "type": "CN_WORD",
+>             "position": 4
+>         },
+>         {
+>             "token": "程序",
+>             "start_offset": 6,
+>             "end_offset": 8,
+>             "type": "CN_WORD",
+>             "position": 5
+>         },
+>         {
+>             "token": "员",
+>             "start_offset": 8,
+>             "end_offset": 9,
+>             "type": "CN_CHAR",
+>             "position": 6
+>         },
+>         {
+>             "token": "学习",
+>             "start_offset": 9,
+>             "end_offset": 11,
+>             "type": "CN_WORD",
+>             "position": 7
+>         }
+>     ]
+>    }
+>    ```
+>    
+>    
 
 
 
@@ -3886,47 +4002,255 @@ docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elas
 
 #### 创建索引和映射
 
+![](images/image-20240304111750822.png)
+
 搜索结果页面展示什么内容?
 
-标题
-布局
-封面图片
-发布时间
-作者名称
-文章id
-作者id
-静态url
+- 标题
+- 布局
+- 封面图片
+- 发布时间
+- 作者名称
+- 文章id
+- 作者id
+- 静态url
 
 哪些需要索引和分词？
 
-标题
-内容
+- 标题
+- 内容
+
+#### 使用postman/apifox添加映射和查询
+
+- put `localhost:9200/app_info_article`  
+
+请求body，json：【对应上面搜索结果页面展示的内容】
+
+```json
+{
+    "mappings":{
+        "properties":{
+            "id":{
+                "type":"long"
+            },
+            "publishTime":{
+                "type":"date"
+            },
+            "layout":{
+                "type":"integer"
+            },
+            "images":{
+                "type":"keyword",
+                "index": false
+            },
+            "staticUrl":{
+                "type":"keyword",
+                "index": false
+            },
+            "authorId": {
+                "type": "long"
+            },
+            "authorName": {
+                "type": "text"
+            },
+            "title":{
+                "type":"text",
+                "analyzer":"ik_smart"
+            },
+            "content":{
+                "type":"text",
+                "analyzer":"ik_smart"
+            }
+        }
+    }
+}
+```
+
+结果：
+
+```json
+{
+    "acknowledged": true,
+    "shards_acknowledged": true,
+    "index": "app_info_article"
+}
+```
 
 
 
-#### 使用postman添加映射和查询
+- GET请求查询映射：http://localhost:9200/app_info_article
 
+- DELETE请求，删除索引及映射：http://localhost:9200/app_info_article
 
+- GET请求，查询所有文档：http://localhost:9200/app_info_article/_search
 
-
+```json
+{
+    "took": 115,
+    "timed_out": false,
+    "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 0,
+            "relation": "eq"
+        },
+        "max_score": null,
+        "hits": []
+    }
+}
+```
 
 #### 数据初始化到索引库
 
+项目上线时会进行一次批量导入数据到索引库
 
+1. 在测试模块下新建es-init模块
+
+
+
+2. 查询所有的文章信息，批量导入到es索引库中
+
+```java
+    @Autowired
+    private ApArticleMapper apArticleMapper;
+    @Autowired
+    private RestHighLevelClient restHighLevelClient;
+    /**
+     * 注意：数据量的导入，如果数据量过大，需要分页导入
+     * @throws Exception
+     */
+    @Test
+    public void init() throws Exception {
+        // 1 查询所有符合条件的文章
+        List<SearchArticleVo> searchArticleVos = apArticleMapper.loadArticleList();
+
+        // 2 批量导入索引库
+        BulkRequest bulkRequest = new BulkRequest("app_info_article");
+        for (SearchArticleVo searchArticleVo : searchArticleVos) {
+            IndexRequest indexRequest = new IndexRequest().id(searchArticleVo.getId().toString())
+                    .source(JSON.toJSONString(searchArticleVo), XContentType.JSON);
+            bulkRequest.add(indexRequest);
+        }
+
+        BulkResponse response = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+        System.out.println("插入结果： " + response.status());
+
+    }
+```
+
+http://10.211.55.5:9200/app_info_article/_search  查看已经导入的索引库
 
 #### 搜索接口定义
 
 ![](images/image-20240229151152770.png)
 
+UserSearchDto 
 
+```java
+@Data
+public class UserSearchDto {
+
+    /**
+    * 搜索关键字
+    */
+    String searchWords;
+    /**
+    * 当前页
+    */
+    int pageNum;
+    /**
+    * 分页条数
+    */
+    int pageSize;
+    /**
+    * 最小时间
+    */
+    Date minBehotTime;
+
+    public int getFromIndex(){
+        if(this.pageNum<1)return 0;
+        if(this.pageSize<1) this.pageSize = 10;
+        return this.pageSize * (pageNum-1);
+    }
+}
+```
+
+
+
+最小时间来判断分页
 
 #### 实现
 
+1. 在leadnews-service模块下创建新的微服务模块leadnews-search
+
+> IDEA中拷贝模块的步骤：
+>
+> 1. 把想要拷贝的目录拷贝相应的目录下
+> 2. 在对应的父模块的pom登记
+> 3. 在Maven出刷新
+
+2. 在nacos的新建配置 leadnews-search
+
+```yaml
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+elasticsearch:
+  host: 10.211.55.5
+  port: 9200
+```
 
 
 
+3. 搜索接口定义
+
+```java
+@RestController
+@RequestMapping("/api/v1/article/search")
+public class ArticleSearchController{
+    @PostMapping("/search")
+    public ResponseResult search(@RequestBody UserSearchDto userSearchDto) {
+        return null;
+    }
+}
+```
+
+
+
+4. 业务层
+
+ArticleSearchServiceImpl
+
+
+
+
+
+6. 测试
+
+需要在app的网关中添加搜索微服务的路由配置【在nacos配置leadnews-app-gateway中添加】：
+
+```yaml
+#搜索微服务
+- id: leadnews-search
+ uri: lb://leadnews-search
+ predicates:
+   - Path=/search/**
+ filters:
+   - StripPrefix= 1
+```
+
+启动项目进行测试，至少要启动文章微服务，用户微服务，搜索微服务，app网关微服务，app前端工程
+
+![](images/image-20240314161953117.png)
 
 ### 7.3 新增文章创建索引
+
+前面的，项目上线时，会初始化一次索引库，之后每一次新增文章时也需要创建索引。
 
 #### 思路分析
 
@@ -3934,13 +4258,100 @@ docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elas
 
 #### 实现步骤
 
-1.文章审核成功使用kafka发送消息
+1. 文章审核成功使用kafka发送消息
+
+在文章微服务`ArticleFreemarkerServiceImpl#buildArticleToMinIO` 中添加
+
+```java
+// 发送消息，创建es索引
+createArticleEsIndex(apArticle, content, path);
+```
+
+```java
+    @Autowired
+    private KafkaTemplate<String,String> kafkaTemplate;
+    /**
+     * 发送消息，创建es索引
+     * @param apArticle
+     * @param content
+     * @param path
+     */
+    private void createArticleEsIndex(ApArticle apArticle, String content, String path) {
+        SearchArticleVo vo = new SearchArticleVo();
+        BeanUtils.copyProperties(apArticle,vo);
+        vo.setContent(content);
+        vo.setStaticUrl(path);
+
+        kafkaTemplate.send(ArticleConstants.ARTICLE_ES_SYNC_TOPIC, JSON.toJSONString(vo));
+    }
+```
 
 
 
-2.搜索微服务接收消息，添加数据到索引库
+2. 文章微服务集成kafka发送消息
+
+在文章微服务的nacos的配置中心添加kafka消息生产者的配置：
+
+```yaml
+kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+```
 
 
+
+3. 在搜索微服务中创建监听，用于接收消息，添加数据到索引库
+
+```java
+@Component
+@Slf4j
+public class SyncArticleListener {
+    @Autowired
+    private RestHighLevelClient restHighLevelClient;
+
+    @KafkaListener(topics = ArticleConstants.ARTICLE_ES_SYNC_TOPIC)
+    public void onMessage(String message) {
+        if(StringUtils.isNotBlank(message)){
+
+            log.info("SyncArticleListener,message={}", message);
+
+            SearchArticleVo searchArticleVo = JSON.parseObject(message, SearchArticleVo.class);
+            IndexRequest indexRequest = new IndexRequest("app_info_article");
+            indexRequest.id(searchArticleVo.getId().toString());
+            indexRequest.source(message, XContentType.JSON);
+            try {
+                restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+            } catch (IOException e) {
+                e.printStackTrace();
+                log.error("sync es error={}",e);
+            }
+        }
+    }
+}
+```
+
+
+
+4. 在nacos中的搜索微服务中添加，kafka消费者配置
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ${spring.application.name}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+```
+
+
+
+5. 测试
+
+🔖
 
 
 
@@ -3956,30 +4367,50 @@ docker run -id --name elasticsearch -p 9200:9200 -p 9300:9300 -v /usr/share/elas
 
 #### 数据存储说明
 
-用户的搜索记录，需要给每一个用户都保存一份，数据量较大，要求加载速度快，通常这样的数据存储到mongodb更合适，不建议直接存储到关系型数据库中。
+用户的搜索记录，需要给**每一个用户都保存一份**，数据量较大，要求加载速度快，通常这样的数据存储到mongodb更合适，不建议直接存储到关系型数据库中。
+
+![](images/image-20240314182714920.png)
 
 
 
 #### MongoDB安装及集成
 
-拉取镜像
+- 拉取镜像
 
 ```
 docker pull mongo
 ```
 
-创建容器
+- 创建容器
 
 ```
 docker run -di --name mongo-service --restart=always -p 27017:27017 -v ~/data/mongodata:/data mongo
 ```
 
+- 使用navicat链接MongoDB测试
 
 
-在leadnews-test模块中新建mongo-demo模块用于mongo学习
 
+
+
+- 在leadnews-test模块中新建mongo-demo模块用于mongo学习
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
 ```
 
+```yaml
+server:
+  port: 9998
+spring:
+  data:
+    mongodb:
+      host: 10.211.55.5
+      port: 27017
+      database: leadnews-history
 ```
 
 
@@ -3987,6 +4418,8 @@ docker run -di --name mongo-service --restart=always -p 27017:27017 -v ~/data/mo
 
 
 核心方法：
+
+
 
 
 
@@ -4086,7 +4519,7 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 
 黑马头条项目整个项目开发涉及web展示和大数据分析来给用户推荐文章，如何找出哪些文章是热点文章进行针对性的推荐呢？这个时候需要进行大数据分析的准备工作，埋点。
 
-所谓“埋点”，是数据采集领域（尤其是用户行为数据采集领域）的术语，指的是针对特定用户行为或事件进行捕获、处理和发送的相关技术及其实施过程。比如用户某个icon点击次数、阅读文章的时长，观看视频的时长等等。
+所谓“==埋点==”，是数据采集领域（尤其是用户行为数据采集领域）的术语，指的是针对特定用户行为或事件进行捕获、处理和发送的相关技术及其实施过程。比如用户某个icon点击次数、阅读文章的时长，观看视频的时长等等。
 
 ### 2 关注
 

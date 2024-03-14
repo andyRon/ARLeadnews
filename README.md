@@ -3,6 +3,8 @@ AR头条
 
 [详细开发笔记](./AR头条.md)
 
+10.211.55.5
+
 - 工程结构：
 
 ```
@@ -21,7 +23,7 @@ arleadnews								父工程，统一管理项目依赖（定义通用包的版�
 			leadnews-schedule		延迟、定时任务				【51701】
 			leadnews-user				用户端							【51801】
 			leadnews-wemedia		自媒体								【51803】
-			leadnews-search			搜索
+			leadnews-search			搜索								【51804】
 			leadnews-comment		评论
 			leadnews-behavior		
 		leadnews-test					测试案例
@@ -62,6 +64,12 @@ http://localhost:8802/  自媒体
 
 http://localhost:8848/nacos
 
+```shell
+./startup.sh -m standalone
+```
+
+nacos nacos
+
 - minio
 
 本地搭建 minioadmin minioadmin
@@ -71,6 +79,15 @@ http://localhost:8848/nacos
 ```
 
 
+
+- es
+
+```
+#自定义elasticsearch连接配置
+elasticsearch:
+  host: 10.211.55.5
+  port: 9200
+```
 
 
 

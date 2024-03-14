@@ -5,19 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>top.andyron</groupId>
-        <artifactId>arleadnews</artifactId>
+        <artifactId>leadnews-test</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>leadnews-service</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>leadnews-user</module>
-        <module>leadnews-article</module>
-        <module>leadnews-wemedia</module>
-        <module>leadnews-schedule</module>
-        <module>leadnews-search</module>
-    </modules>
+    <artifactId>es-init</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -29,38 +21,39 @@
         <!-- 引入依赖模块 -->
         <dependency>
             <groupId>top.andyron</groupId>
-            <artifactId>leadnews-model</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>top.andyron</groupId>
             <artifactId>leadnews-common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>top.andyron</groupId>
-            <artifactId>leadnews-feign-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <!-- Spring boot starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- nacos的注册中心和配置中心-->
+
+        <!--elasticsearch-->
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>7.14.2</version>
         </dependency>
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>7.14.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>7.14.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.13.1</version>
+        </dependency>
+
     </dependencies>
 </project>

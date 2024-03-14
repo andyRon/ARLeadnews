@@ -41,7 +41,7 @@ public class MinIOTest {
 
             // 1 创建minio链接客户端
             MinioClient minioClient = MinioClient.builder().credentials("minioadmin", "minioadmin")
-                    .endpoint("http://192.168.0.102:9000").build();
+                    .endpoint("http://localhost:9000").build();
             // 2 上传
             PutObjectArgs objectArgs = PutObjectArgs.builder()
                     .object("list.html")        // 文件名
@@ -53,7 +53,7 @@ public class MinIOTest {
             minioClient.putObject(objectArgs);
 
             // 访问路径
-            System.out.println("http://192.168.0.102:9000/leadnews/list.html");
+            System.out.println("http://localhost:9000/leadnews/list.html");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -67,7 +67,7 @@ public class MinIOTest {
 
             // 1 创建minio链接客户端
             MinioClient minioClient = MinioClient.builder().credentials("minioadmin", "minioadmin")
-                    .endpoint("http://192.168.0.102:9000").build();
+                    .endpoint("http://localhost:9000").build();
             // 2 上传
             PutObjectArgs objectArgs = PutObjectArgs.builder()
                     .object("plugins/js/index.js")        // 文件名
