@@ -4391,8 +4391,6 @@ docker run -di --name mongo-service --restart=always -p 27017:27017 -v ~/data/mo
 
 
 
-
-
 - 在leadnews-test模块中新建mongo-demo模块用于mongo学习
 
 ```xml
@@ -4419,7 +4417,43 @@ spring:
 
 核心方法：
 
+```java
+		@Autowired
+    private MongoTemplate mongoTemplate;
 
+    //保存
+    @Test
+    public void saveTest(){
+        for (int i = 0; i < 10; i++) {
+            ApAssociateWords apAssociateWords = new ApAssociateWords();
+            apAssociateWords.setAssociateWords("AR头条" + i);
+            apAssociateWords.setCreatedTime(new Date());
+            mongoTemplate.save(apAssociateWords);
+        }
+
+    }
+
+    //查询一个
+    @Test
+    public void saveFindOne(){
+        ApAssociateWords apAssociateWords = mongoTemplate.findById("65f2eb852fd072556df0c1a6", ApAssociateWords.class);
+        System.out.println(apAssociateWords);
+    }
+
+    //条件查询
+    @Test
+    public void testQuery(){
+        Query query = Query.query(Criteria.where("associateWords").is("AR头条"))
+                .with(Sort.by(Sort.Direction.DESC,"createdTime"));
+        List<ApAssociateWords> apAssociateWordsList = mongoTemplate.find(query, ApAssociateWords.class);
+        System.out.println(apAssociateWordsList);
+    }
+
+    @Test
+    public void testDel(){
+        mongoTemplate.remove(Query.query(Criteria.where("associateWords").is("黑马头条")),ApAssociateWords.class);
+    }
+```
 
 
 
@@ -4439,13 +4473,147 @@ spring:
 
 #### 保存搜索记录-实现步骤
 
+1. 在搜索微服务集成mongodb
 
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
+```
+
+在nacos中的搜索微服务配置中添加：
+
+```yaml
+spring:
+  data:
+    mongodb:
+      host: 10.211.55.5
+      port: 27017
+      database: leadnews-history
+```
+
+导入MongoDB数据sql，leadnews-history.sql；
+
+在搜索微服务下创建对应的两个实体类：`ApUserSearch`（搜索的历史表）、`ApAssociateWords`（联想词表）
+
+
+
+2. 创建`ApUserSearchService`新增insert方法
+
+```java
+@Override
+public void insert(String keyword, Integer userId) {
+  // 1 查询当前用户搜索的关键词
+  Query query = Query.query(Criteria.where("userId").is(userId).and("keyword").is(keyword));
+  ApUserSearch apUserSearch = mongoTemplate.findOne(query, ApUserSearch.class);
+
+  // 2 存在则更新最新时间
+  if (apUserSearch != null) {
+    apUserSearch.setCreatedTime(new Date());
+    mongoTemplate.save(apUserSearch);
+    return;
+  }
+
+  // 3 不存在则新增, 判断当前历史记录是否超过10条记录
+  apUserSearch = new ApUserSearch();
+  apUserSearch.setUserId(userId);
+  apUserSearch.setKeyword(keyword);
+  apUserSearch.setCreatedTime(new Date());
+
+  Query q = Query.query(Criteria.where("userId").is(userId));
+  q.with(Sort.by(Sort.Direction.DESC, "createdTime"));
+  List<ApUserSearch> apUserSearchList = mongoTemplate.find(q, ApUserSearch.class);
+  if (apUserSearchList == null || apUserSearchList.size() < 10) {
+    mongoTemplate.save(apUserSearch);
+  } else {
+    ApUserSearch lastUserSearch = apUserSearchList.get(apUserSearchList.size() - 1);
+    mongoTemplate.findAndReplace(Query.query(Criteria.where("id").is(lastUserSearch.getId())), apUserSearch);
+  }
+
+}
+```
+
+
+
+3. 在app的网关的过滤器`AuthorizeFilter`中添加：
+
+```java
+            // 获取用户
+            Object userId = claimsBody.get("id");
+            // 存储header中
+            ServerHttpRequest serverHttpRequest = request.mutate().headers(httpHeaders -> {
+                httpHeaders.add("userId", userId + "");
+            }).build();
+            // 重置请求
+            exchange.mutate().request(serverHttpRequest);
+```
+
+
+
+4. 参考自媒体微服务，在搜索微服务中添加拦截器   获取当前登录的用户
+
+```java
+public class AppTokenInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String userId = request.getHeader("userId");
+        if (userId != null) {
+            // 存入到当前线程中
+            ApUser apUser = new ApUser();
+            apUser.setId(Integer.valueOf(userId));
+            AppThreadLocalUtil.setUser(apUser);
+        }
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        AppThreadLocalUtil.clear();
+    }
+}
+```
+
+🔖p126 `AppThreadLocalUtil`
+
+
+
+想让上面的拦截器生效，还需要添加配置:
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 添加自定义的拦截器，拦截所有请求
+        registry.addInterceptor(new AppTokenInterceptor()).addPathPatterns("/**");
+    }
+}
+```
+
+
+
+5. 在`ArticleSearchService`的search方法中添加调用保存历史记录
+
+```java
+        // 异步调用，保存搜索记录
+        ApUser user = AppThreadLocalUtil.getUser();
+        if (user != null && dto.getFromIndex() == 0) {
+            apUserSearchService.insert(dto.getSearchWords(), user.getId());
+        }
+```
+
+注意要在insert方法上添加`@Async`，已经search启动类开启异步调用`@EnableAsync`
+
+
+
+6. 测试，开启app网关、用户微服务、文章微服务、搜索微服务，搜索后查看mongodb找那个的结果
 
 
 
 #### 加载搜索历史
 
-按照当前用户，按照时间倒序查询  `/api/v1/history/load`  POST
+按照当前用户，按照时间倒序查询。  `/api/v1/history/load`  POST
 
 ```java
 List<ApUserSearch> userSearchList = mongoTemplate.find(Query.query(Criteria.where("userId").is(userId))               .with(Sort.by(Sort.Direction.DESC, "createdTime")), ApUserSearch.class);
@@ -4474,9 +4642,31 @@ mongoTemplate.remove(query, ApUserSearch.class);
 
 ![](images/image-20240229152834382.png)
 
-`ApAssociateWords` 
+`ApAssociateWords`
 
-#### 搜索词-数据来源
+```java
+@Data
+@Document("ap_associate_words")
+public class ApAssociateWords implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private String id;
+
+    /**
+     * 联想词
+     */
+    private String associateWords;
+
+    /**
+     * 创建时间
+     */
+    private Date createdTime;
+}
+```
+
+ 
+
+#### 搜索词-联想词的数据来源
 
 通常是网上搜索频率比较高的一些词，通常在企业中有两部分来源：
 
@@ -4484,11 +4674,11 @@ mongoTemplate.remove(query, ApUserSearch.class);
   通过分析用户搜索频率较高的词，按照排名作为搜索词
 
 - 第二：第三方获取
-  关键词规划师（百度）、5118、爱站网
+  关键词规划师（百度）、[5118](https://www.5118.com/ciku/index)、爱站网
 
 
 
-导入资料中的ap_associate_words.js脚本到mongo中
+可以根据需求导入联想词到mongo中
 
 #### 接口定义
 
@@ -4501,9 +4691,15 @@ query.limit(userSearchDto.getPageSize());
 List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.class);
 ```
 
+正则表达式说明
 
+|      | **说明**                                    |
+| ---- | ------------------------------------------- |
+| `.`  | 表示匹配任意字符                            |
+| `*`  | 表示匹配0次以上                             |
+| `*?` | 则是表示非贪婪匹配,碰到符合条件的立马就匹配 |
 
-
+2
 
 ## 8 平台管理
 

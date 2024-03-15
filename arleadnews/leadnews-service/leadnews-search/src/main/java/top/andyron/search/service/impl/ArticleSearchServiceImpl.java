@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import top.andyron.model.common.dtos.ResponseResult;
 import top.andyron.model.common.enums.AppHttpCodeEnum;
 import top.andyron.model.search.dto.UserSearchDto;
+import top.andyron.model.user.pojos.ApUser;
+import top.andyron.search.service.ApUserSearchService;
 import top.andyron.search.service.ArticleSearchService;
+import top.andyron.utils.thread.AppThreadLocalUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +37,8 @@ public class ArticleSearchServiceImpl implements ArticleSearchService {
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
+    @Autowired
+    private ApUserSearchService apUserSearchService;
 
     /**
      * ES文章分页搜索
@@ -45,6 +50,12 @@ public class ArticleSearchServiceImpl implements ArticleSearchService {
         // 1.检查参数
         if(dto == null || StringUtils.isBlank(dto.getSearchWords())){
             return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+
+        // 异步调用，保存搜索记录
+        ApUser user = AppThreadLocalUtil.getUser();
+        if (user != null && dto.getFromIndex() == 0) {
+            apUserSearchService.insert(dto.getSearchWords(), user.getId());
         }
 
         // 2.设置查询条件
