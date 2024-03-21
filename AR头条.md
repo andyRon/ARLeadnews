@@ -5258,17 +5258,235 @@ ap_article文章表
 
 1.查询前5天的文章
 
+文章微服务
+
+`HotArticleService`
+
+`HotArticleServiceImpl`
+
+```java
+// 1.查询前5天的文章数据
+Date dateParam = DateTime.now().minusDays(5).toDate();
+List<ApArticle> apArticleList = apArticleMapper.findArticleListByLast5days(dateParam);
+```
+
+
+
+ApArticleMapper：
+
+```xml
+<select id="findArticleListByLast5days" resultMap="resultMap">
+  SELECT
+  aa.*
+  FROM
+  `ap_article` aa
+  LEFT JOIN ap_article_config aac ON aa.id = aac.article_id
+  <where>
+    and aac.is_delete != 1
+    and aac.is_down != 1
+    <if test="dayParam != null">
+      and aa.publish_time <![CDATA[>=]]> #{dayParam}
+    </if>
+  </where>
+</select>
+```
+
 
 
 2.计算文章分值
+
+```java
+    private List<HotArticleVo> computeHotArticle(List<ApArticle> apArticleList) {
+
+        List<HotArticleVo> hotArticleVoList = new ArrayList<>();
+
+        if(apArticleList != null && apArticleList.size() > 0){
+            for (ApArticle apArticle : apArticleList) {
+                HotArticleVo hot = new HotArticleVo();
+                BeanUtils.copyProperties(apArticle,hot);
+                Integer score = computeScore(apArticle);
+                hot.setScore(score);
+                hotArticleVoList.add(hot);
+            }
+        }
+        return hotArticleVoList;
+    }
+    /**
+     * 计算文章的具体分值
+     * @param apArticle
+     * @return
+     */
+    private Integer computeScore(ApArticle apArticle) {
+        Integer scere = 0;
+        if(apArticle.getLikes() != null){
+            scere += apArticle.getLikes() * ArticleConstants.HOT_ARTICLE_LIKE_WEIGHT;
+        }
+        if(apArticle.getViews() != null){
+            scere += apArticle.getViews();
+        }
+        if(apArticle.getComment() != null){
+            scere += apArticle.getComment() * ArticleConstants.HOT_ARTICLE_COMMENT_WEIGHT;
+        }
+        if(apArticle.getCollection() != null){
+            scere += apArticle.getCollection() * ArticleConstants.HOT_ARTICLE_COLLECTION_WEIGHT;
+        }
+        return scere;
+    }
+```
+
+
+
+
 
 
 
 3.为每个频道缓存30条分值较高的文章
 
+1️⃣ 首先要通过远程接口到自媒体服务中查询所有频道
+
+- 在leadnews-feign-api模块中添加接口IWemediaClient
+
+```java
+@FeignClient("leadnews-wemedia")
+public interface IWemediaClient {
+    /**
+     * 查询所有频道
+     * @return
+     */
+    @GetMapping("/api/v1/channel/list")
+    public ResponseResult getChannels();
+}
+```
+
+- 在leadnews-wemedia中创建对应实现：
+
+```java
+@RestController
+public class WemediaClient implements IWemediaClient {
+    @Autowired
+    private WmChannelService wmChannelService;
+
+    @GetMapping("/api/v1/channel/list")
+    @Override
+    public ResponseResult getChannels() {
+        return wmChannelService.findAll();
+    }
+}
+
+```
+
+- 在文章微服务启动类中加上注解
+
+```
+Could not autowire. No beans of 'IWemediaClient' type found.
+```
+
+```java
+@EnableFeignClients(basePackages = "top.andyron.apis")
+public class ArticleApplication {
+```
 
 
-4.定时任务
+
+2️⃣ 频道30条文章
+
+```java
+    @Autowired
+    private IWemediaClient wemediaClient;
+    @Autowired
+    private CacheService cacheService;      // TODO redis缓存
+    /**
+     * 为每个频道缓存30条分值较高的文章
+     * @param hotArticleVoList
+     */
+    private void cacheTagToRedis(List<HotArticleVo> hotArticleVoList) {
+        // 每个频道缓存30条分值较高的文章
+        ResponseResult responseResult = wemediaClient.getChannels();
+        if(responseResult.getCode().equals(200)) {
+            String channelJson = JSON.toJSONString(responseResult.getData());
+            List<WmChannel> wmChannels = JSON.parseArray(channelJson, WmChannel.class);
+            // 检索出每个频道的文章
+            if(wmChannels != null && wmChannels.size() > 0) {
+                for (WmChannel wmChannel : wmChannels) {
+                    List<HotArticleVo> hotArticleVos = hotArticleVoList.stream().filter(x ->
+                            x.getChannelId().equals(wmChannel.getId())).collect(Collectors.toList());
+                    // 给文章进行排序，取30条分值较高的文章存入redis  key：频道id   value：30条分值较高的文章
+                    sortAndCache(hotArticleVos, ArticleConstants.HOT_ARTICLE_FIRST_PAGE + wmChannel.getId());
+                }
+            }
+        }
+        // 设置推荐数据
+        // 给文章进行排序，取30条分值较高的文章存入redis  key：频道id   value：30条分值较高的文章
+        sortAndCache(hotArticleVoList, ArticleConstants.HOT_ARTICLE_FIRST_PAGE + ArticleConstants.DEFAULT_TAG);
+    }
+    /**
+     * 排序并且缓存数据
+     * @param hotArticleVos
+     * @param key
+     */
+    private void sortAndCache(List<HotArticleVo> hotArticleVos, String key) {
+        hotArticleVos = hotArticleVos.stream().sorted(Comparator.comparing(HotArticleVo::getScore).reversed()).collect(Collectors.toList());
+        if (hotArticleVos.size() > 30) {
+            hotArticleVos = hotArticleVos.subList(0, 30);
+        }
+        cacheService.set(key, JSON.toJSONString(hotArticleVos));
+    }
+}
+```
+
+
+
+3️⃣ 在HotArticleServiceImpl上点击**alt + 回车**创建测试类
+
+![](images/image-20240321092642354.png)
+
+```java
+@SpringBootTest(classes = ArticleApplication.class)
+@RunWith(SpringRunner.class)
+public class HotArticleServiceImplTest {
+    @Autowired
+    private HotArticleService hotArticleService;
+
+    @Test
+    public void computeHotArticle() {
+        hotArticleService.computeHotArticle();
+    }
+}
+```
+
+
+
+测试之前要启动leadnews-schedule、leadnews-wemedia
+
+
+
+🔖 bug p147
+
+```
+java.lang.NullPointerException
+	at top.andyron.article.service.impl.HotArticleServiceImpl.lambda$cacheTagToRedis$0(HotArticleServiceImpl.java:113)
+	at java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:174)
+	at java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1384)
+	at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:482)
+	at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:472)
+	at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:708)
+	at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:566)
+	at top.andyron.article.service.impl.HotArticleServiceImpl.cacheTagToRedis(HotArticleServiceImpl.java:113)
+	at top.andyron.article.service.impl.HotArticleServiceImpl.computeHotArticle(HotArticleServiceImpl.java:47)
+	at top.andyron.article.service.impl.HotArticleServiceImpl$$FastClassBySpringCGLIB$$a9895ba7.invoke(<generated>)
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:771)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:749)
+
+```
+
+
+
+
+
+4.定时任务   🔖
 
 1️⃣ 在xxl-job-admin中新建执行器和任务
 
@@ -5284,7 +5502,7 @@ ap_article文章表
 
 
 
-### 查询文章接口改造
+### 查询文章接口改造 🔖
 
 #### 思路分析
 

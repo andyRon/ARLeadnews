@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @MapperScan("top.andyron.schedule.mapper")
-@EnableScheduling  //开启调度任务
+@EnableScheduling  // 开启调度任务
 public class ScheduleApplication {
 
     public static void main(String[] args) {

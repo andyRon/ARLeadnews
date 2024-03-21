@@ -23,4 +23,17 @@ public class ArticleConstants {
      */
     public static final String ARTICLE_ES_SYNC_TOPIC = "article.es.sync.topic";
 
+
+    /**
+     * 热点文章分值权重
+     */
+    public static final Integer HOT_ARTICLE_LIKE_WEIGHT = 3;
+    public static final Integer HOT_ARTICLE_COMMENT_WEIGHT = 5;
+    public static final Integer HOT_ARTICLE_COLLECTION_WEIGHT = 8;
+
+    /**
+     * 热点文章缓存key的前缀
+     */
+    public static final String HOT_ARTICLE_FIRST_PAGE = "hot_article_first_page_";
+
 }
