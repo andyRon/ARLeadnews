@@ -4701,13 +4701,13 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 
 2
 
-## 8 平台管理
+## 8 平台管理 🔖
+
+AR头条后台管理系统
 
 
 
-
-
-## 9 用户行为
+## 9 用户行为 🔖
 
 ### 1 什么是行为
 
@@ -4734,6 +4734,8 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 ![image-20210727163038634](../../../../../Volumes/FX-SSD-PS2000/myfield/开发资料/02项目资料/黑马头条/day09-用户/需求说明/用户行为-需求.assets\image-20210727163038634.png)
 
 ### 3 点赞或取消点赞
+
+
 
 ### 4 阅读
 
@@ -4762,6 +4764,10 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 - 关注需要在heima-leadnews-user微服务中实现
 - 收藏与文章详情数据回显在heima-leadnews-article微服务中实现
 
+
+
+
+
 ## 10 热点文章-定时计算
 
 ### 今日内容
@@ -4777,9 +4783,9 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 
   新发布的文章会展示在前面，并不是热点文章
 
-#### 实现思路
 
-把热点数据存入redis进行展示
+
+解决方案：**把热点数据存入redis进行展示**
 
 判断文章是否是热点，有几项标准： **点赞数量，评论数量，阅读数量，收藏数量**
 
@@ -4798,63 +4804,69 @@ List<ApAssociateWords> wordsList = mongoTemplate.find(query, ApAssociateWords.cl
 
 #### 定时任务框架-xxljob
 
-spring传统的定时任务@Scheduled，但是这样存在这一些问题 ：
+spring传统的定时任务`@Scheduled`，但是这样存在这一些问题 ：
 
 - 做集群任务的重复执行问题
-- cron表达式定义在代码之中，修改不方便
-- 定时任务失败了，无法重试也没有统计
+- `cron`表达式定义在代码之中，修改不方便
+- 定时任务失败了，**无法重试也没有统计**
 - 如果任务量过大，不能有效的分片执行
 
-解决这些问题的方案为：
 
-**xxl-job分布式任务调度框架**
 
-### 分布式任务调度🔖
+解决这些问题的方案为：**xxl-job分布式任务调度框架**
+
+### 分布式任务调度
 
 #### 什么是分布式任务调度
 
-当前软件的架构已经开始向分布式架构转变，将单体结构拆分为若干服务，服务之间通过网络交互来完成业务处理。在分布式架构下，一个服务往往会部署多个实例来运行我们的业务，如果在这种分布式系统环境下运行任务调度，我们称之为**分布式任务调度**。
+当前软件的架构已经开始向分布式架构转变，将单体结构拆分为若干服务，服务之间通过网络交互来完成业务处理。
+
+在分布式架构下，一个服务往往会部署多个实例来运行我们的业务，如果在这种分布式系统环境下运行任务调度，我们称之为**==分布式任务调度==**。
 
 ![](images/image-20210729230059884.png)
 
 将任务调度程序分布式构建，这样就可以具有分布式系统的特点，并且提高任务的调度处理能力：
 
-1、并行任务调度
+1. 并行任务调度
 
 并行任务调度实现靠多线程，如果有大量任务需要调度，此时光靠多线程就会有瓶颈了，因为一台计算机CPU的处理能力是有限的。
 
 如果将任务调度程序分布式部署，每个结点还可以部署为集群，这样就可以让多台计算机共同去完成任务调度，我们可以将任务分割为若干个分片，由不同的实例并行执行，来提高任务调度的处理效率。
 
-2、高可用
+2. 高可用
 
 若某一个实例宕机，不影响其他实例来执行任务。
 
-3、弹性扩容
+3. 弹性扩容
 
 当集群中增加实例就可以提高并执行任务的处理效率。
 
-4、任务管理与监测
+4. 任务管理与监测
 
 对系统中存在的所有定时任务进行统一的管理及监测。让开发人员及运维人员能够时刻了解任务执行情况，从而做出快速的应急处理响应。
+
+
 
 **分布式任务调度面临的问题：**
 
 当任务调度以集群方式部署，同一个任务调度可能会执行多次，例如：电商系统定期发放优惠券，就可能重复发放优惠券，对公司造成损失，信用卡还款提醒就会重复执行多次，给用户造成烦恼，所以我们需要控制相同的任务在多个运行实例上只执行一次。常见解决方案：
 
-- 分布式锁，多个实例在任务执行前首先需要获取锁，如果获取失败那么就证明有其他服务已经在运行，如果获取成功那么证明没有服务在运行定时任务，那么就可以执行。
-- ZooKeeper选举，利用ZooKeeper对Leader实例执行定时任务，执行定时任务的时候判断自己是否是Leader，如果不是则不执行，如果是则执行业务逻辑，这样也能达到目的。
+- ==分布式锁==，多个实例在任务执行前首先需要获取锁，如果获取失败那么就证明有其他服务已经在运行，如果获取成功那么证明没有服务在运行定时任务，那么就可以执行。
+- ==ZooKeeper==选举(zookeeper主从策略)，利用ZooKeeper对Leader实例执行定时任务，执行定时任务的时候判断自己是否是Leader，如果不是则不执行，如果是则执行业务逻辑，这样也能达到目的。
+
+
 
 #### xxl-Job简介
 
 针对分布式任务调度的需求，市场上出现了很多的产品：
 
-1） TBSchedule：淘宝推出的一款非常优秀的高性能分布式调度框架，目前被应用于阿里、京东、支付宝、国美等很多互联网企业的流程调度系统中。但是已经多年未更新，文档缺失严重，缺少维护。
+1. TBSchedule：淘宝推出的一款非常优秀的高性能分布式调度框架，目前被应用于阿里、京东、支付宝、国美等很多互联网企业的流程调度系统中。但是已经多年未更新，文档缺失严重，缺少维护。
 
-2） XXL-Job：大众点评的分布式任务调度平台，是一个轻量级分布式任务调度平台, 其核心设计目标是开发迅速、学习简单、轻量级、易扩展。现已开放源代码并接入多家公司线上产品线，开箱即用。
+2. XXL-Job：大众点评的分布式任务调度平台，是一个轻量级分布式任务调度平台, 其核心设计目标是开发迅速、学习简单、轻量级、易扩展。现已开放源代码并接入多家公司线上产品线，开箱即用。
 
-3）Elastic-job：当当网借鉴TBSchedule并基于quartz 二次开发的弹性分布式任务调度系统，功能丰富强大，采用zookeeper实现分布式协调，具有任务高可用以及分片功能。
+3. Elastic-job：当当网借鉴TBSchedule并基于quartz 二次开发的弹性分布式任务调度系统，功能丰富强大，采用zookeeper实现分布式协调，具有任务高可用以及分片功能。
 
-4）Saturn： 唯品会开源的一个分布式任务调度平台，基于Elastic-job，可以全域统一配置，统一监控，具有任务高可用以及分片功能。
+4. Saturn： 唯品会开源的一个分布式任务调度平台，基于Elastic-job，可以全域统一配置，统一监控，具有任务高可用以及分片功能。
 
 XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅速、学习简单、轻量级、易扩展。现已开放源代码并接入多家公司线上产品线，开箱即用。
 
@@ -4900,7 +4912,9 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
 | https://github.com/xuxueli/xxl-job   | [Download](https://github.com/xuxueli/xxl-job/releases)   |
 | http://gitee.com/xuxueli0323/xxl-job | [Download](http://gitee.com/xuxueli0323/xxl-job/releases) |
 
-也可以使用资料文件夹中的源码
+
+
+可以直接下载xxl-job源码，idea打开，下载依赖，创建初识数据库`tables_xxl_job.sql`；也可以使用docker安装
 
 
 
@@ -4910,15 +4924,11 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
 
 #### 配置部署调度中心
 
+作用：统一管理任务调度平台上调度任务，负责触发调度执行，并且提供任务管理平台。
 
+1. 调度数据库初始化SQL脚本执行
 
-
-
-##### 2.3.3 初始化“调度数据库”
-
-请下载项目源码并解压，获取 “调度数据库初始化SQL脚本” 并执行即可。
-
-位置：`/xxl-job/doc/db/tables_xxl_job.sql`  共8张表
+位置：xxl-job/doc/db/tables_xxl_job.sql  共8张表
 
 - xxl_job_lock：任务调度锁表；
 - xxl_job_group：执行器信息表，维护任务执行器信息；
@@ -4932,95 +4942,299 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
 
 如果mysql做主从,调度中心集群节点务必强制走主库;
 
-##### 2.3.4 编译源码
 
-解压源码,按照maven格式将源码导入IDE, 使用maven进行编译即可，源码结构如下：
 
-![](images/image-20210729230502703.png)
+2.调度中心配置
+  配置文件位置：xxl-job/xxl-job-admin/src/main/resources/application.properties
 
-##### 2.3.5 配置部署“调度中心”
 
-调度中心项目：xxl-job-admin
 
-作用：统一管理任务调度平台上调度任务，负责触发调度执行，并且提供任务管理平台。
+3. 启动调度中心xxl-job-admin，默认登录账号 “admin/123456”, 登录后运行界面如下图所示。
 
-步骤一：调度中心配置
+http://localhost:8080/xxl-job-admin/
 
-调度中心配置文件地址：`/xxl-job/xxl-job-admin/src/main/resources/application.properties`
+![](images/image-20240317095006763.png)
 
-数据库的连接信息修改为自己的数据库
+默认有一个执行器
 
-```properties
-### web
-server.port=8888
-server.servlet.context-path=/xxl-job-admin
-
-### actuator
-management.server.servlet.context-path=/actuator
-management.health.mail.enabled=false
-
-### resources
-spring.mvc.servlet.load-on-startup=0
-spring.mvc.static-path-pattern=/static/**
-spring.resources.static-locations=classpath:/static/
-
-### freemarker
-spring.freemarker.templateLoaderPath=classpath:/templates/
-spring.freemarker.suffix=.ftl
-spring.freemarker.charset=UTF-8
-spring.freemarker.request-context-attribute=request
-spring.freemarker.settings.number_format=0.##########
-
-### mybatis
-mybatis.mapper-locations=classpath:/mybatis-mapper/*Mapper.xml
-#mybatis.type-aliases-package=com.xxl.job.admin.core.model
-
-### xxl-job, datasource
-spring.datasource.url=jdbc:mysql://127.0.0.1:3306/xxl_job?Unicode=true&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
-spring.datasource.username=root
-spring.datasource.password=root
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-### datasource-pool
-spring.datasource.type=com.zaxxer.hikari.HikariDataSource
-spring.datasource.hikari.minimum-idle=10
-spring.datasource.hikari.maximum-pool-size=30
-spring.datasource.hikari.auto-commit=true
-spring.datasource.hikari.idle-timeout=30000
-spring.datasource.hikari.pool-name=HikariCP
-spring.datasource.hikari.max-lifetime=900000
-spring.datasource.hikari.connection-timeout=10000
-spring.datasource.hikari.connection-test-query=SELECT 1
-
-### xxl-job, email
-spring.mail.host=smtp.qq.com
-spring.mail.port=25
-spring.mail.username=xxx@qq.com
-spring.mail.password=xxx
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.properties.mail.smtp.starttls.required=true
-spring.mail.properties.mail.smtp.socketFactory.class=javax.net.ssl.SSLSocketFactory
-
-### xxl-job, access token
-xxl.job.accessToken=
-
-### xxl-job, i18n (default is zh_CN, and you can choose "zh_CN", "zh_TC" and "en")
-xxl.job.i18n=zh_CN
-
-## xxl-job, triggerpool max size
-xxl.job.triggerpool.fast.max=200
-xxl.job.triggerpool.slow.max=100
-
-### xxl-job, log retention days
-xxl.job.logretentiondays=30
-```
-
-启动调度中心，默认登录账号 “admin/123456”, 登录后运行界面如下图所示。
+![](images/image-20240317171313089.png)
 
 #### 配置部署调度中心-docker安装
 
-//....🔖
+1. 创建mysql容器，初始化xxl-job的SQL脚本
+
+```shell
+docker run -p 3306:3306 --name mysql8.0 \
+-v /mydata/mysql/conf:/etc/mysql/conf.d \
+-v /mydata/mysql/logs:/var/log/mysql \
+-v /mydata/mysql/data:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=123456 \
+-d mysql:8.0
+```
+
+2. 拉取镜像
+
+```shell
+docker pull xuxueli/xxl-job-admin:2.3.0
+```
+
+3. 创建容器
+
+xuxueli/xxl-job-admin:2.3.0  不支持arm64，换成
+
+```shell
+docker run -e PARAMS="--spring.datasource.url=jdbc:mysql://10.211.55.5:3306/xxl_job?Unicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&serverTimezone=GMT%2B8 \
+--spring.datasource.username=root \
+--spring.datasource.password=123456" \
+-p 8888:8080 -v /tmp:/data/applogs \
+--name xxl-job-admin --restart=always  -d pi4k8s/xxl-job-admin:2.3.0
+```
+
+http://10.211.55.5:8888/xxl-job-admin/
+
+
+
+#### Bean模式任务(方法形式)-入门案例
+
+1. 登录调度中心，点击下图所示“新建任务”按钮，新建示例任务
+
+![](images/image-20240317173118154.png)
+
+2. 创建xxljob-demo项目，导入依赖
+
+```xml
+<!--xxl-job-->
+<dependency>
+  <groupId>com.xuxueli</groupId>
+  <artifactId>xxl-job-core</artifactId>
+  <version>2.3.0</version>
+</dependency>
+```
+
+3. 配置文件
+
+```yaml
+server:
+  port: ${port:8881}
+
+xxl:
+  job:
+    admin:
+      addresses: http://10.211.55.5:8888/xxl-job-admin
+    executor:
+      appname: xxl-job-executor-sample   # 执行器名称
+      port: ${executor.port:9999}
+```
+
+4. xxljob配置类，配置执行器
+
+```java
+@Configuration
+public class XxlJobConfig {
+    private Logger logger = LoggerFactory.getLogger(XxlJobConfig.class);
+
+    @Value("${xxl.job.admin.addresses}")
+    private String adminAddresses;
+    @Value("${xxl.job.executor.appname}")
+    private String appname;
+    @Value("${xxl.job.executor.port}")
+    private int port;
+		@Value("${xxl.job.executor.logpath}")
+    private String logpath;
+
+    @Bean
+    public XxlJobSpringExecutor xxlJobExecutor() {
+        logger.info(">>>>>>>>>>> xxl-job config init.");
+        XxlJobSpringExecutor xxlJobSpringExecutor = new XxlJobSpringExecutor();
+        xxlJobSpringExecutor.setAdminAddresses(adminAddresses);
+        xxlJobSpringExecutor.setAppname(appname);
+        xxlJobSpringExecutor.setPort(port);
+        xxlJobSpringExecutor.setLogPath(logpath);
+        return xxlJobSpringExecutor;
+    }
+}
+```
+
+5. 任务代码，重要注解：`@XxlJob("demoJobHandler")`
+
+```java
+@Component
+public class HelloJob {
+    @Value("${server.port}")
+    private String port;
+
+    @XxlJob("demoJobHandler")
+    public void helloJob(){
+        System.out.println("简单任务执行了。。。。" + port);
+    }
+  // ...
+}
+```
+
+6. 测试。
+
+启动XxlJobApplication
+
+启动xxljob任务：
+
+![](images/image-20240317173658021.png)
+
+
+
+#### 任务详解
+
+##### 执行器
+
+- 执行器：任务的绑定的执行器，任务触发调度时将会自动发现注册成功的执行器, 实现任务自动发现功能; 
+- 另一方面也可以方便的进行任务分组。每个任务必须绑定一个执行器
+
+![](images/image-20240320115856448.png)
+
+##### 任务基础配置
+
+- 执行器：每个任务必须绑定一个执行器, 方便给任务进行分组
+- 任务描述：任务的描述信息，便于任务管理；
+- 负责人：任务的负责人；
+- 报警邮件：任务调度失败时邮件通知的邮箱地址，支持配置多邮箱地址，配置多个邮箱地址时用逗号分隔
+
+![](images/image-20240320120151927.png)
+
+##### 任务调度配置
+
+调度类型：
+
+- 无：该类型不会主动触发调度；
+- CRON：该类型将会通过CRON，触发任务调度；
+- 固定速度：该类型将会以固定速度，触发任务调度；按照固定的间隔时间，周期性触发；
+
+![](images/image-20240320120237056.png)
+
+##### 任务基础配置
+
+- 运行模式：
+
+  BEAN模式：任务以JobHandler方式维护在执行器端；需要结合 "JobHandler" 属性匹配执行器中任务；
+
+- JobHandler：运行模式为 "BEAN模式" 时生效，对应执行器中新开发的JobHandler类“@JobHandler”注解自定义的value值；
+
+- 执行参数：任务执行所需的参数； 
+
+![](images/image-20240320120447204.png)
+
+##### 阻塞处理策略
+
+阻塞处理策略：调度过于密集执行器来不及处理时的处理策略；
+
+- 单机串行（默认）：调度请求进入单机执行器后，调度请求进入FIFO(First Input First Output)队列并以串行方式运行；
+- 丢弃后续调度：调度请求进入单机执行器后，发现执行器存在运行的调度任务，本次请求将会被丢弃并标记为失败；
+- 覆盖之前调度：调度请求进入单机执行器后，发现执行器存在运行的调度任务，将会终止运行中的调度任务并清空队列，然后运行本地调度任务；
+
+##### 路由策略
+
+当执行器集群部署时，提供丰富的路由策略，包括；
+
+- FIRST（第一个）：固定选择第一个机器；
+- LAST（最后一个）：固定选择最后一个机器；
+- ROUND（轮询）：
+- RANDOM（随机）：随机选择在线的机器；
+- CONSISTENT_HASH（一致性HASH）：每个任务按照Hash算法固定选择某一台机器，且所有任务均匀散列在不同机器上。
+- LEAST_FREQUENTLY_USED（最不经常使用）：使用频率最低的机器优先被选举；
+- LEAST_RECENTLY_USED（最近最久未使用）：最久未使用的机器优先被选举；
+- FAILOVER（故障转移）：按照顺序依次进行心跳检测，第一个心跳检测成功的机器选定为目标执行器并发起调度；
+- BUSYOVER（忙碌转移）：按照顺序依次进行空闲检测，第一个空闲检测成功的机器选定为目标执行器并发起调度；
+- SHARDING_BROADCAST(分片广播)：广播触发对应集群中所有机器执行一次任务，同时系统自动传递分片参数；可根据分片参数开发分片任务；
+
+![](images/image-20240320120637928.png)
+
+##### 路由策略案例（轮询）
+
+先设置对应执行器的路由策略为轮询（默认）。
+
+配置文件中连个端口配置是变量，可以通过修改vm option参数来分别启动多个服务（多个服务有一个共同的执行器）。
+
+```yaml
+server:
+  port: ${port:8881}
+
+xxl:
+  job:
+    executor:
+      port: ${executor.port:9999}
+```
+
+
+
+```
+-Dport=8882 -Dexecutor.port=9998
+```
+
+![](images/image-20240320121503356.png)
+
+返回结果就是，两个服务交替调用。
+
+
+
+##### 路由策略案例(分片广播)
+
+执行器集群部署时，任务路由策略选择”分片广播”情况下，一次任务调度将会广播触发对应集群中所有执行器执行一次任务
+
+![](images/image-20240320121901232.png)
+
+![](images/image-20240320121951812.png)
+
+> 需求：让两个节点同时执行10000个任务，每个节点分别执行5000个任务
+
+1. 创建分片执行器
+
+
+
+2. 创建任务，路由策略为**分片广播**
+
+
+
+3. 分片广播代码
+
+分片参数
+
+- index：当前分片序号(从0开始)，执行器集群列表中当前执行器的序号；
+- total：总分片数，执行器集群的总机器数量；
+
+```java
+    @XxlJob("shardingJobHandler")
+    public void shardingJobHandler(){
+        // 分片的参数
+        int shardIndex = XxlJobHelper.getShardIndex();
+        int shardTotal = XxlJobHelper.getShardTotal();
+
+        // 业务逻辑
+        List<Integer> list = getList();
+        for (Integer integer : list) {
+            if(integer % shardTotal == shardIndex) {
+                System.out.println("当前第" + shardIndex + "分片执行了，任务项为：" + integer);
+            }
+        }
+    }
+
+    public List<Integer> getList(){
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 10000; i++) {
+            list.add(i);
+        }
+        return list;
+    }
+```
+
+4. 开启连个服务，执行一次
+
+![](images/image-20240320123620745.png)
+
+10000次，各5000次运行两个分片上（一个奇数，一个偶数）
+
+🔖
+
+
+
+
 
 ### 热点文章-定时计算
 
@@ -5035,6 +5249,10 @@ xxl.job.logretentiondays=30
 ap_article文章表
 
 ![](images/image-20240229154912638.png)
+
+为什么查询前5天的文章？最近发布的文章才有实时的热度
+
+
 
 #### 实现
 
@@ -5052,7 +5270,15 @@ ap_article文章表
 
 4.定时任务
 
+1️⃣ 在xxl-job-admin中新建执行器和任务
 
+​	新建执行器：`leadnews-hot-article-executor`
+
+​	新建任务：路由策略为轮询，Cron表达式：`0 0 2 * * ?` （每天凌晨2点执行）
+
+2️⃣ 在leadnews-article中集成xxl-job
+
+3️⃣ 在article微服务中新建任务类 
 
 
 
