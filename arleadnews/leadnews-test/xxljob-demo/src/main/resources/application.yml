@@ -1,0 +1,12 @@
+server:
+  port: ${port:8881}
+
+xxl:
+  job:
+    admin:
+      addresses: http://10.211.55.5:8888/xxl-job-admin
+    executor:
+#      appname: xxl-job-executor-sample   # 执行器名称
+      appname: xxl-job-sharding-executor   # 执行器名称
+      port: ${executor.port:9999}
+      logpath: /Users/andyron/logs/xxl-job
