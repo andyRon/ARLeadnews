@@ -4389,7 +4389,7 @@ docker run -di --name mongo-service --restart=always -p 27017:27017 -v ~/data/mo
 
 - 使用navicat链接MongoDB测试
 
-
+或使用命令行进入`docker exec -it mongo-service bash`
 
 - 在leadnews-test模块中新建mongo-demo模块用于mongo学习
 
@@ -5804,15 +5804,33 @@ public class KafkaStreamHelloListener {
 
 ## 12 项目部署_持续集成
 
+> 软件开发模式
+>
+> - 软件开发生命周期
+> - 瀑布开发
+> - 敏捷开发
+>
+> CI工具Jenkins
+>
+> - Jenkins安装
+> - Jenkins插件安装
+> - 项目创建配置
+> - 触发器配置
+>
+> 微服务部署
+>
+> - 多环境配置切换
+> - Dockerfile集成
+
 ### 什么是持续集成
 
-持续集成（ Continuous integration ， 简称 CI ）指的是，频繁地（一天多次）将代码集成到主干
+持续集成（Continuous integration，简称CI）指的是，频繁地（一天多次）将代码集成到主干。
 
-![image-20210802000658790](images/image-20210802000658790.png)
+![](images/image-20210802000658790.png)
 
 **持续集成的组成要素**
 
-一个自动构建过程， 从检出代码、 编译构建、 运行测试、 结果记录、 测试统计等都是自动完成的， 无需人工干预。
+一个自动构建过程，从检出代码、编译构建、运行测试、结果记录、测试统计等都是自动完成的， 无需人工干预。
 
 一个代码存储库，即需要版本控制软件来保障代码的可维护性，同时作为构建过程的素材库，一般使用SVN或Git。
 
@@ -5831,7 +5849,7 @@ public class KafkaStreamHelloListener {
 
 #### 软件开发生命周期
 
-软件开发生命周期又叫做SDLC（Software Development Life Cycle），它是集合了计划、开发、测试和部署过程的集合。如下图所示 ：
+软件开发生命周期又叫做==SDLC==（Software Development Life Cycle），它是集合了计划、开发、测试和部署过程的集合。如下图所示 ：
 
 ![](images/image-20210802011508487.png)
 
@@ -5916,15 +5934,92 @@ Jenkins的特征：
 
 
 
+##### docker安装Jenkins
+
+
+
+- 创建Jenkins的home文件
+
+```shell
+#创建文件夹
+mkdir -p /home/jenkins_home
+#权限
+chmod 777 /home/jenkins_home
+```
+
+- 拉取镜像，运行容器
+
+```shell
+docker pull jenkins/jenkins
+
+docker run -d -uroot -p 9095:8080 -p 50000:50000 --name jenkins -v /home/jenkins_home:/var/jenkins_home -v /etc/localtime:/etc/localtime jenkins/jenkins
+```
+
+`-d`	后台运行容器，并返回容器ID
+`-uroot`	使用 root 身份进入容器，推荐加上，避免容器内执行某些命令时报权限错误
+`-p 9095:8080`	将容器内8080端口映射至宿主机9095端口，这个是访问jenkins的端口
+`-p 50000:50000`	将容器内50000端口映射至宿主机50000端口
+`--name jenkins`	设置容器名称为jenkins
+`-v /home/jenkins_home:/var/jenkins_home`	 :/var/jenkins_home目录为容器jenkins工作目录，我们将硬盘上的一个目录挂载到这个位置，方便后续更新镜像后继续使用原来的工作目录
+`-v /etc/localtime:/etc/localtime`	让容器使用和服务器同样的时间设置
+`jenkins/jenkins`	镜像的名称，这里也可以写镜像ID
+
+
+
+- 密码：
+
+```sh
+cat /home/jenkins_home/secrets/initialAdminPassword
+c901fc6d24e6451aa5d58c7ffafbd4d1
+# 或
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+http://10.211.55.5:9095/
+
+
+
+- 修改插件源为 https://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
+
+```sh
+vim hudson.model.UpdateCenter.xml
+```
+
+```sh
+docker restart jenkins
+```
+
+
+
+- 安装插件
+
+Manage Jenkins-->Manage Plugins
+
+
+
+- 新建管理员账号
+
+andyron 123456
+
+
+
+进入容器
+
+```sh
+docker exec -it -u root 6bd7c6f43beb /bin/bash
+```
+
+
+
 ##### 插件安装
 
 如果想让Jenkins来实现更多的功能，需要安装插件完成
 
-Maven Integration plugin： Maven 集成管理插件。
-Docker plugin： Docker集成插件。
-GitLab Plugin： GitLab集成插件。
-Publish Over SSH：远程文件发布插件。
-SSH: 远程脚本执行插件。
+- Maven Integration plugin： Maven 集成管理插件。
+- Docker plugin： Docker集成插件。
+- GitLab Plugin： GitLab集成插件。
+- Publish Over SSH：远程文件发布插件。
+- SSH: 远程脚本执行插件。
 
 
 
@@ -5934,11 +6029,22 @@ SSH: 远程脚本执行插件。
 
 #### 服务器环境准备
 
+安装Jenkins的服务器中需要拉取代码、编译、打包、远程部署，需要先准备对应的环境:
 
+- docker
+- jdk
+- git
+- Maven
+
+
+
+🔖 p170
 
 #### Jenkins工具配置
 
 在jenkins管理页面中集成环境， Manage Jenkins-->Tool Configuration ，需要指定环境的目录。
+
+
 
 
 
@@ -5962,17 +6068,26 @@ SSH: 远程脚本执行插件。
 
 1.在微服务中的bootstrap.yml中新增配置
 
+```yaml
+  profiles:
+    active: dev
+```
+
 
 
 2.在nacos的配置中心中新增各个环境的配置文件，例如user微服务中新增
 
+![](images/image-20240321163102547.png)
 
+prefix，默认使用`${spring.application.name}`
+
+`spring.profile.active`，即为当前环境对应的 profile
 
 #### 整体思路
 
-目标：把AR头条的app端相关的微服务部署到192.168.200.100这台服务器上
+目标：把AR头条的app端相关的微服务部署到192.168.200.100(jenkins部署的位置)这台服务器上
 
-
+![](images/image-20240321163611644.png)
 
 > 注意：192.168.200.100与192.168.200.130必须使用NAT这个网卡，必须在同一个网段，是可以互相通信的，可以使用ping命令来检查
 
@@ -5993,7 +6108,19 @@ SSH: 远程脚本执行插件。
 
 在微服务运行之前需要在本地仓库中先去install所依赖的jar包，所以第一步应该是从git中拉取代码，并且把基础的依赖部分安装到仓库中
 
+1.父工程arleadnews
 
+
+
+2.找到自己指定的git仓库，设置用户名和密码
+
+
+
+3.把基础依赖信息安装到服务器上的本地仓库
+
+
+
+4.执行
 
 
 
@@ -6001,11 +6128,33 @@ SSH: 远程脚本执行插件。
 
 所有微服务打包的方式类似，以leadnews-user微服务为例
 
+1.新建任务
+
+
+
+2.找到自己指定的git仓库，设置用户名和密码
+
+
+
+3.执行maven命令
+
+
+
+4.并执行shell脚本
+
+
+
+5.执行日志
+
+
+
 
 
 #### 部署服务到远程服务器上
 
 目标：使用jenkins（192.168.200.100）把微服务打包部署到192.168.200.130服务器上
+
+整体思路
 
 1，安装私有仓库
 
