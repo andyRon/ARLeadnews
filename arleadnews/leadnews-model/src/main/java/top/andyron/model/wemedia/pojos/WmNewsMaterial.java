@@ -13,7 +13,7 @@ import java.io.Serializable;
  * 自媒体图文引用素材信息表
  * </p>
  *
- * @author itheima
+ * @author andyron
  */
 @Data
 @TableName("wm_news_material")

@@ -14,7 +14,7 @@ import java.util.Date;
  * APP用户信息表
  * </p>
  *
- * @author itheima
+ * @author andyron
  */
 @Data
 @TableName("ap_user")

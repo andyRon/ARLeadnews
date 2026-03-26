@@ -11,7 +11,7 @@ import top.andyron.model.common.enums.AppHttpCodeEnum;
  * 异常处理
  * @author andyron
  **/
-@ControllerAdvice  //控制器增强类
+@ControllerAdvice  // 控制器增强类。这是一个特殊的 Spring Bean，它可以"拦截"所有 Controller 的请求处理过程，在特定时刻（如异常发生时）执行增强逻辑。
 @Slf4j
 public class ExceptionCatch {
     /**

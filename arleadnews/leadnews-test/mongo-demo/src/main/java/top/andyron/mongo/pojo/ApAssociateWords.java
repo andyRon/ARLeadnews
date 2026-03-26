@@ -11,7 +11,7 @@ import java.util.Date;
  * 联想词表
  * </p>
  *
- * @author itheima
+ * @author andyron
  */
 @Data
 @Document("ap_associate_words")

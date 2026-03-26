@@ -10,7 +10,7 @@ import top.andyron.search.pojos.ApAssociateWords;
  * 联想词表 服务类
  * </p>
  *
- * @author itheima
+ * @author andyron
  */
 public interface ApAssociateWordsService {
 

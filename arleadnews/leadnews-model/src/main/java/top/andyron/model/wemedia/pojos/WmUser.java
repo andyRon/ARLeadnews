@@ -14,7 +14,7 @@ import java.util.Date;
  * 自媒体用户信息表
  * </p>
  *
- * @author itheima
+ * @author andyron
  */
 @Data
 @TableName("wm_user")
