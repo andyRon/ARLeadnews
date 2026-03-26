@@ -37,6 +37,7 @@
         <spring.boot.version>2.3.9.RELEASE</spring.boot.version>
         <commons.io.version>2.6</commons.io.version>
         <commons.codec.version>1.12</commons.codec.version>
+        <commons.lang3.version>3.12.0</commons.lang3.version>
         <lombok.version>1.18.8</lombok.version>
         <mysql.version>8.0.23</mysql.version>
         <mybatis.version>3.5.6</mybatis.version>
@@ -65,8 +66,15 @@
         <reflections.version>0.9.11</reflections.version>
         <swagger.version>2.9.2</swagger.version>
         <knife4j.version>2.0.2</knife4j.version>
-        <com.alibaba.cloud>2.2.5.RELEASE</com.alibaba.cloud>
+        <com.alibaba.cloud>2.2.6.RELEASE</com.alibaba.cloud>
         <xxl.job.version>2.2.0-SNAPSHOT</xxl.job.version>
+
+        <!-- 统一日志版本 -->
+        <log4j2.version>2.17.1</log4j2.version>
+        <slf4j.version>1.7.36</slf4j.version>
+
+        <!-- Spring Cloud Context 版本（解决 Nacos 日志问题） -->
+        <spring.cloud.context.version>2.2.6.RELEASE</spring.cloud.context.version>
     </properties>
     <dependencies>
         <!--日志处理包-->
@@ -97,33 +105,34 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <!-- 排除默认的logback日志，使用log4j-->
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
+<!--                <exclusions>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>org.springframework.boot</groupId>-->
+<!--                        <artifactId>spring-boot-starter-logging</artifactId>-->
+<!--                    </exclusion>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>org.slf4j</groupId>-->
+<!--                        <artifactId>slf4j-log4j12</artifactId>-->
+<!--                    </exclusion>-->
+<!--                </exclusions>-->
                 <version>${spring.boot.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
+<!--                <exclusions>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>org.springframework.boot</groupId>-->
+<!--                        <artifactId>spring-boot-starter-logging</artifactId>-->
+<!--                    </exclusion>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>org.slf4j</groupId>-->
+<!--                        <artifactId>slf4j-log4j12</artifactId>-->
+<!--                    </exclusion>-->
+<!--                </exclusions>-->
                 <version>${spring.boot.version}</version>
             </dependency>
+
             <!--Apache 工具包包-->
             <dependency>
                 <groupId>commons-io</groupId>
@@ -141,6 +150,13 @@
                 <artifactId>commons-codec</artifactId>
                 <version>${commons.codec.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>2.11.1</version>
+            </dependency>
+
             <!-- Mysql 数据库 -->
             <dependency>
                 <groupId>mysql</groupId>
@@ -192,6 +208,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-context</artifactId>
+                <version>${spring.cloud.context.version}</version>
+            </dependency>
+
             <!--spring cloud alibaba-->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
@@ -200,6 +223,21 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- Nacos Client 版本（解决 NacosLogging 类缺失问题） -->
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>1.4.2</version>
+            </dependency>
+
+            <!-- Spring Cloud Bootstrap -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-bootstrap</artifactId>
+                <version>2.2.6.RELEASE</version>
+            </dependency>
+
             <!-- spring boot admin -->
             <dependency>
                 <groupId>de.codecentric</groupId>
@@ -231,12 +269,15 @@
                 <artifactId>fastdfs-client</artifactId>
                 <version>${fastdfs.version}</version>
 
-
-                <!--   日志冲突可能解决方案，TODO             -->
+                <!-- 排除 Logback，使用 Log4j2 -->
                 <exclusions>
                     <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-core</artifactId>
                     </exclusion>
                 </exclusions>
 
@@ -299,6 +340,18 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatis.plus.version}</version>
+            </dependency>
+
+            <!-- 明确指定使用 Log4j2 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-log4j2</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

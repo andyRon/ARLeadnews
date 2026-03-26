@@ -10,3 +10,10 @@ spring:
       config:
         server-addr: localhost:8848
         file-extension: yml
+        refresh-enabled: true
+        enabled: true
+# 添加调试日志
+logging:
+  level:
+    com.alibaba.cloud.nacos: DEBUG
+    org.springframework.boot.autoconfigure.condition: DEBUG

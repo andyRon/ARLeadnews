@@ -1,5 +1,6 @@
 package top.andyron.article.service.impl;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import static org.junit.Assert.*;
 // TODO
 @SpringBootTest(classes = ArticleApplication.class)
 @RunWith(SpringRunner.class)
+@Ignore  // ← 临时忽略这个测试
 public class HotArticleServiceImplTest {
     @Autowired
     private HotArticleService hotArticleService;

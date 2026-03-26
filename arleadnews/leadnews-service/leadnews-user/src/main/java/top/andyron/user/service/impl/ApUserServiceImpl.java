@@ -15,6 +15,8 @@ import top.andyron.user.mapper.ApUserMapper;
 import top.andyron.user.service.ApUserService;
 import top.andyron.utils.common.AppJwtUtil;
 
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 

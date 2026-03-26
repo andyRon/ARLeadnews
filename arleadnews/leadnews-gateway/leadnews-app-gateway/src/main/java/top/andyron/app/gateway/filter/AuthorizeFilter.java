@@ -1,7 +1,7 @@
 package top.andyron.app.gateway.filter;
 
 import io.jsonwebtoken.Claims;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
