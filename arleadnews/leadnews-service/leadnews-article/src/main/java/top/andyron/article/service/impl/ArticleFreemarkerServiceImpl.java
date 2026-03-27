@@ -54,26 +54,28 @@ public class ArticleFreemarkerServiceImpl implements ArticleFreemarkerService {
             Template template = null;
             StringWriter out = new StringWriter();
             try {
+                // 1 获取 FreeMarker 模板
                 template = configuration.getTemplate("article.ftl");
+                // 2 准备数据模型
                 Map<String, Object> contentDataModel = new HashMap<>();
                 contentDataModel.put("content", JSONArray.parseArray(content));
-
+                // 3 模板渲染生成完整的HTML
                 template.process(contentDataModel, out);
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
 
-            //3 把html文件上传到minio中
+            // 4 把html文件上传到minio中
             InputStream in = new ByteArrayInputStream(out.toString().getBytes());
             String path = fileStorageService.uploadHtmlFile("", apArticle.getId() + ".html", in);
 
-            //4 修改ap_article表，保存static_url字段
+            // 5 修改ap_article表，保存static_url字段
             apArticleService.update(Wrappers.<ApArticle>lambdaUpdate()
                     .eq(ApArticle::getId, apArticle.getId())
                     .set(ApArticle::getStaticUrl, path));
 
-            // 发送消息，创建es索引
+            // 6 发送消息，创建es索引
             createArticleEsIndex(apArticle, content, path);
         }
     }

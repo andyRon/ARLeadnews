@@ -684,6 +684,8 @@ gitee地址：https://gitee.com/xiaoym/knife4j
 
 使用：
 
+leadnews-common模块
+
 ```xml
 <dependency>
      <groupId>com.github.xiaoymin</groupId>
@@ -696,7 +698,7 @@ gitee地址：https://gitee.com/xiaoym/knife4j
 @EnableSwagger2
 @EnableKnife4j
 @Import(BeanValidatorPluginsConfiguration.class)
-public class SwaggerConfiguration2 {
+public class SwaggerConfiguration {
 ```
 
 | 注解                | 说明                                                                                                                                         |
@@ -704,10 +706,12 @@ public class SwaggerConfiguration2 {
 | `@EnableSwagger2` | 该注解是Springfox-swagger框架提供的使用Swagger注解，该注解必须加                                                                             |
 | `@EnableKnife4j`  | 该注解是 `knife4j`提供的增强注解,Ui提供了例如动态参数、参数过滤、接口排序等增强功能,如果你想使用这些增强功能就必须加该注解，否则可以不用加 |
 
+在Spring.factories中新增配置：
+
 ```
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   top.andyron.common.exception.ExceptionCatch,\
-  top.andyron.common.swagger.SwaggerConfiguration2
+  top.andyron.common.swagger.SwaggerConfiguration
 ```
 
 http://localhost:51801/doc.html
@@ -805,24 +809,39 @@ spring:
 
 请求地址：http://localhost:51601/user/api/v1/login/login_auth
 
+
+
 #### 认证过滤器
 
 认证过滤器用来校验token。
 
-全局过滤器实现jwt校验
+**全局过滤器实现jwt校验**
 
 ![](images/image-20231208131031979.png)
 
+1. 用户进入网关开始登陆，网关过滤器进行判断，如果是登录，则路由到后台管理微服务进行登录
+2. 用户登录成功，后台管理微服务签发JWT TOKEN信息返回给用户
+3. 用户再次进入网关开始访问，网关过滤器接收用户携带的TOKEN 
+4. 网关过滤器解析TOKEN ，判断是否有权限，如果有，则放行，如果没有则返回未认证错误
+
+🔖
+
 在leandews-app-gateway中创建 `AuthorizeFilter`
 
-### 1.7 App前端集成
+
+
+### 1.7 前端集成
 
 nginx方式集成前端项目
 
 ![](images/image-20231208133108999.png)
 
-- 前端项目app-web
-- 配置nginx
+- 通过nginx的反向代理功能访问后台的网关资源
+- 通过nginx的静态服务器功能访问前端静态页面
+
+前端项目app-web
+
+配置nginx
 
 > 每个项目单独创建一个配置文件，因为之后还有很多项目。
 
@@ -874,9 +893,9 @@ http {
 >
 > 文章详情-大文本静态化方案（freemarker，minio）
 
-## 2 app端文章查看，静态化freemarker,分布式文件系统minIO
+## 2 app端文章查看，静态化freemarker，分布式文件系统minIO
 
-### 2.1 App文章列表
+### 2.1 文章列表
 
 #### 需求分析
 
@@ -1028,13 +1047,31 @@ mybatis-plus:
 
 ![](images/image-20231208175735636.png)
 
+```
+文章数据 + FreeMarker 模板 → 合成静态 HTML → 上传到 MinIO
+```
+
+用户访问流程：
+
+```
+用户请求文章
+    ↓
+查询数据库获取 static_url
+    ↓
+重定向到 MinIO 的 HTML 文件
+    ↓
+浏览器渲染完整页面
+```
+
+
+
 ### 2.3 freemarker
 
 #### 模板引擎
 
 ![](images/image-20231208181155299.png)
 
-[FreeMarker](https://github.com/apache/freemarker) 是一款 模板引擎： 即一种基于模板和要改变的数据， 并用来生成输出文本(==HTML网页，电子邮件，配置文件，源代码==等)的通用工具。 它**==不是面向最终用户的==**，而是一个Java类库，是一款程序员可以嵌入他们所开发产品的组件。
+[FreeMarker](https://github.com/apache/freemarker) 是一款模板引擎： 即一种基于模板和要改变的数据， 并用来生成输出文本(==HTML网页，电子邮件，配置文件，源代码==等)的通用工具。 它**==不是面向最终用户的==**，而是一个Java类库，是一款程序员可以嵌入他们所开发产品的组件。
 
 模板编写为FreeMarker Template Language (FTL)。它是简单的，专用的语言， *不是* 像PHP那样成熟的编程语言。 那就意味着要准备数据在真实编程语言中来显示，比如数据库查询和业务运算， 之后模板显示已经准备好的数据。在模板中，你可以专注于如何展现数据， 而在模板之外可以专注于要展示什么数据。
 
